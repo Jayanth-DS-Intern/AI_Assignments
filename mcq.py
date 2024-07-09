@@ -2307,4 +2307,5 @@ with(tab10):
 	# 	else:
 	# 		st.write("Please enter the text to generate Summary.")
 
-
+with(tab11):
+	st.write("Soon...")
