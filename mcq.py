@@ -17,8 +17,8 @@ import PyPDF2
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 
 data_cred={"type": "service_account",
@@ -51,7 +51,7 @@ chatgpt_headers = {
 	"content-type": "application/json",
 	"Authorization":"Bearer {}".format(os.getenv("openaikey"))}
 
-tab1, tab2, tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11 = st.tabs(["MCQ", "Summary", "Lesson Plan","Assignments","Topic Segregation","Brain Busters","Textbook Questions","Activity Questions","Fill in the blanks","Match the following","Asseration and Reason"])
+tab1, tab2, tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11 = st.tabs(["MCQ", "Summary", "Lesson Plan","Assignments","Topic Segregation","Brain Busters","Textbook Questions","Activity Questions","Fill in the blanks","Match the following","Assertion and Reason"])
 
 paragraph="""Food in the form of a soft slimy substance where some
 proteins and carbohydrates have already been broken down
@@ -935,6 +935,8 @@ Now, follow these steps to create the match-the-following questions:
 corresponding items in Column 2.
 3. Ensure that the items in both columns are directly related to the lesson content.
 4. Mix up the order of items in Column 2 to create the matching challenge.
+5. Ensure that one option is correct, one is an active distractor (plausible but incorrect), and two
+are passive distractors (clearly incorrect).
 
 For each set of questions, provide the following:
 
@@ -1021,6 +1023,156 @@ Answer:  a. A-1,B-2,C-3,D-4
 									"enum": ["Remember", "Understand","Apply","Analyze","Evaluate","Create"]
 								},
 				"question_type_mcq_or_short_or_long": {
+								"type": "string",
+								"enum": ["Match the following"]
+								}
+					
+							},
+							"required": ["question","options","answer","question_level","question_type","question_type_mcq_or_short_or_long"]
+						}
+					}
+				},
+				"required": ["topic", "questions"]
+			}
+		}
+		}
+		
+		
+	]
+	response = client.chat.completions.create(
+		model="gpt-4",
+		messages=messages,
+		tools=tools,
+		tool_choice="required",
+		seed=111	 # auto is default, but we'll be explicit
+	)
+	#print("response------------",response)
+	response_message = response.choices[0].message
+	tool_calls = response_message.tool_calls
+	# Step 2: check if the model wanted to call a function
+	if tool_calls:
+		# Step 3: call the function
+		# Note: the JSON response may not always be valid; be sure to handle errors
+		available_functions = {
+		"generate_long_short_questions":generate_long_short_questions
+		}  # only one function in this example, but you can have multiple
+		messages.append(response_message)  # extend conversation with assistant's reply
+		# Step 4: send the info for each function call and function response to the model
+		#print("tool_calls-----------------",tool_calls)
+		for tool_call in tool_calls:
+			function_name = tool_call.function.name
+			function_to_call = available_functions[function_name]
+			function_args = json.loads(tool_call.function.arguments)
+			function_response = function_to_call(
+				questions=function_args.get("questions"),
+				topic=function_args.get("topic"),
+			)
+			return function_response
+		
+def generate_assertion_and_reason(paragraph,url,headers,prompt):
+	# Step 1: send the conversation and available functions to the model
+	messages = [{"role": "system", "content": f""" 
+ Prompt:
+You will be given a lesson topic. Your task is to create three assertion and reason
+questions based on this topic, following the format of assertion, reason, and multiple-choice
+options.
+
+Here is the lesson topic:
+<lesson_topic>
+{paragraph}
+</lesson_topic>
+
+To create each question, follow these guidelines:
+1. Formulate an assertion (A) that is a statement related to the lesson topic.
+2. Create a reason (R) that explains or supports the assertion.
+3. Develop four multiple-choice options:
+a) Both A and R are true, and R correctly explains A.
+b) Both A and R are true, but R does not correctly explain A.
+c) A is false, but R is true.
+d) A is true, but R is false.
+4. Ensure that one option is correct, one is an active distractor (plausible but incorrect), and two
+are passive distractors (clearly incorrect).
+
+Present each question in the following format:
+
+question:
+Assertion (A): [Write the assertion here]
+
+Reason (R): [Write the reason here]
+
+Options:
+a) [Option a]
+b) [Option b]
+c) [Option c]
+d) [Option d]
+
+Answer: [Indicate the correct option letter]
+ 
+e.g:
+
+question:
+Assertion (A): The focal length of a concave mirror is considered negative according to the New Cartesian Sign Convention.
+Reason (R): According to the New Cartesian Sign Convention, distances measured to the left of the pole (origin) along the principal axis are taken as negative.
+
+Options:
+a) Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of Assertion (A).
+b) Both Assertion (A) and Reason (R) are true but Reason (R) is not the correct explanation of Assertion (A). 
+c) Assertion (A) is false but Reason (R) is true.  
+d) Assertion (A) is true but Reason (R) is false. 
+
+Answer:
+a) Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of Assertion (A).
+
+Ensure that your questions and explanations are accurate, clear, and directly related to the
+provided lesson topic.
+
+"""},{"role": "user", "content": f"{prompt}"}]
+	tools = [
+	{
+			"type": "function",
+			"function": {
+			"name": "generate_long_short_questions",
+			"parameters": {
+				"type": "object",
+				"properties": {
+					"topic": {
+						"type": "string"
+					},
+					"questions": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"question": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"Assertion (A)": {
+												"type": "string"
+											},
+											"Reason (R)": {
+												"type": "string"
+											},
+										},
+										"required": ['Assertion (A)', 'Reason (R)']
+									}
+								},
+								"options": {
+									"type": "string"
+								},
+								"answer": {
+									"type": "string"
+								},
+								"question_level": {
+									"type": "string",
+									"enum": ["easy", "medium","hard"]
+								},
+								"question_type": {
+									"type": "string",
+									"enum": ["Remember", "Understand","Apply","Analyze","Evaluate","Create"]
+								},
+								"question_type_mcq_or_short_or_long": {
 								"type": "string",
 								"enum": ["Match the following"]
 								}
@@ -1552,10 +1704,10 @@ with(tab1):
 						final_data.append(json_struct)
 					save_json_to_text(final_data, 'output.txt')
 					collection = db.collection("question-library")
-					# for item in final_data:
-					# 	doc = collection.document()
-					# 	item['question_id'] = doc.id
-					# 	doc.set(item)
+					for item in final_data:
+						doc = collection.document()
+						item['question_id'] = doc.id
+						doc.set(item)
 					download_button_id = str(uuid.uuid4())
 					# Provide a download link for the text file
 					st.download_button(
@@ -2074,7 +2226,7 @@ with(tab7):
 
 
 with(tab8):
-	st.write("Soon...")
+	st.write(" Coming Soon...")
 	# final_data = []
 	# syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab8')
 	# class_name = st.selectbox(
@@ -2232,7 +2384,7 @@ with(tab9):
 
 
 with(tab10):
-	st.write("Soon...")
+	st.write("Coming Soon...")
 	# final_data = []
 	# syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab10')
 	# class_name = st.selectbox(
@@ -2308,4 +2460,77 @@ with(tab10):
 	# 		st.write("Please enter the text to generate Summary.")
 
 with(tab11):
-	st.write("Soon...")
+	st.write("Coming Soon...")
+	# final_data = []
+	# syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab11')
+	# class_name = st.selectbox(
+	# 			"Select class",
+	# 	('VI', 'VII', 'VIII', 'IX','X'),key="class_tab11")
+	# subject_name  = st.selectbox(
+	# 			"Select Subject",
+	# 	("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab11")
+	# lesson_name	 = st.selectbox(
+	# 			"Select lesson",
+	# 	("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab11")
+	
+	# textbook_text = st.text_area("Enter the textbook questions here:", height=200,key='Assertion and Reason')
+	# prompt_assertion_and_reason_questions = st.text_area("Enter the prompt:",key="Assertion_and_Reason", height=200,value="workout answers for asseration and reason questions")
+	# json_struct={}
+
+	# if st.button("Get Assertion and Reason Questions"):
+	# 	if textbook_text:
+	# 		if syllabus == "CBSE":
+	# 			subject_collection = db.collection('cbse_subjects')
+	# 		elif syllabus == "SSC":
+	# 			subject_collection = db.collection('ssc_subjects')
+	# 		else:
+	# 			raise Exception("Wrong Syllabus")
+			 
+	# 		subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
+	# 		subject_id = subject_data['subject_id']
+			 
+	# 		lesson_collection = db.collection('lessons')
+	# 		lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
+	# 		lesson_id = lesson_document.get()[0].id
+	# 		lp = generate_assertion_and_reason(textbook_text,chatgpt_url,chatgpt_headers,prompt_assertion_and_reason_questions)
+	# 		print("lp----->",lp)
+	# 		lp_json=json.loads(lp)
+
+	# 		for j in lp_json['questions']:
+	# 				json_struct={}
+	# 				json_struct['class']=class_name
+	# 				json_struct['subject']=subject_name
+	# 				json_struct['lesson']=lesson_name
+	# 				json_struct['question']=j['question']
+	# 				json_struct['options']=j['options']
+	# 				json_struct['answer']=j['answer']
+	# 				json_struct['level']=j['question_level']
+	# 				json_struct['question_type']=j['question_type']
+	# 				json_struct['type']='single-line'
+	# 				json_struct['marks']='1'
+	# 				json_struct['syllabus']=syllabus
+	# 				json_struct['subject_id']=subject_id
+	# 				json_struct['lesson_id']=lesson_id
+	# 				json_struct['access']="public"
+	# 				json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type'],"Fill-in-the-blank"]}
+	# 				#st.write(json_struct)
+	# 				final_data.append(json_struct)
+	# 				#st.write(final_data)
+	# 		save_json_to_text(final_data, 'output.txt')
+	# 		# collection = db.collection("question-library")
+	# 		# for item in final_data:
+	# 		# 	doc = collection.document()
+	# 		# 	item['question_id'] = doc.id
+	# 		# 	doc.set(item)
+	# 		download_button_id = str(uuid.uuid4())
+	# 		# Provide a download link for the text file
+	# 		st.download_button(
+	# 					label="Download Textbook Questions",
+	# 					data=open('output.txt', 'rb').read(),
+	# 					file_name='output.txt',
+	# 					mime='text/plain',
+	# 				key=download_button_id
+	# 		)
+			
+	# 	else:
+	# 		st.write("Please enter the text to generate Summary.")
