@@ -17,9 +17,11 @@ import PyPDF2
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
+import anthropic
+from anthropic import Client
 # from dotenv import load_dotenv
 # load_dotenv()
-
+from system_tools import system_activity_questions,tools_activity_questions
 
 data_cred={"type": "service_account",
 		"project_id": os.getenv("project_id"),
@@ -44,8 +46,20 @@ db = firestore.client()
 client = OpenAI(
   api_key=os.getenv("openaikey"),  # this is also the default, it can be omitted
 )
+anthropic_key = os.environ["anthropic_key"]
+
+client_anthropic =  Client(api_key=anthropic_key)
+
+print("claude key--------->", anthropic_key)
 
 chatgpt_url = "https://api.openai.com/v1/chat/completions"
+
+claude_headers = {
+	"content-type": "application/json",
+	"Authorization":"Bearer {}".format(os.getenv("anthropic_key"))}
+
+claude_url = 'https://api.anthropic.com/v1/messages'
+
 
 chatgpt_headers = {
 	"content-type": "application/json",
@@ -686,45 +700,137 @@ Important notes:
 def generate_answers_for_textbook_activity_questions(paragraph,url,headers,prompt):
 	# Step 1: send the conversation and available functions to the model
 	messages = [{"role": "system", "content": f""" 
-You are going to create multiple-choice questions (MCQs) based on an activity. The activity description is given in triple quotes.
+You are an AI assistant tasked with creating meaningful questions with answers based on a given activity
+description from a lesson. The activity description will be provided to you, and your job is to
+carefully analyze it and generate following questions(meaningfully) with answers. Here's how you should proceed:
+
+First, read the following activity description:
+
+<activity_description>
+{paragraph}
+</activity_description>
+
+Now, based on this activity description, you will create three types of questions: short answer
+questions, multiple-choice questions (MCQs), and long answer questions. For each question type,
+follow these guidelines:
+
+Think step by step and follow these General Guidelines:
+- Ensure all the questions are meaningful, don't create so many questions if you are unable to! Think step by step before creating the question.
+- Ensure if the options are not required for a question then provide empty list in options key but don't remove it from response.
+- Ensure that the questions cover different aspects of the activity.
+- Vary the difficulty levels across all question types.
+- Make sure that the questions are contextually meaningful and directly related to the activity
+description but don't include the name:"activity" in the question.
+- Avoid creating questions that require information not provided in the activity description.
+- Remember that not all long questions are necessarily hard, and not all MCQs are necessarily easy.
+Assign difficulty levels based on the complexity of the concept being tested, not just the question
+format.
+ 
+Examples:
+
+For example, activity:
  
 
-Follow these steps to create the MCQs:
+Take a large shining spoon. Try to view your face in its curved
+surface.
+> Do you get the image? Is it smaller or larger?
+> Move the spoon slowly away from your face. Observe the image.
+How does it change?
+> Reverse the spoon and repeat the Activity. How does the image
+look like now?
+> Compare the characteristics of the image on the two surfaces
 
-1. Extract a portion of the activity that provides sufficient context for the question. Ensure the extracted portion includes any necessary details so that the student understands the meaning of the question.
-2. Formulate a question based on the extracted portion of the activity. Ensure the question is clear and directly related to the provided context.
-3. Create four answer options for each question, with one correct answer and three plausible but incorrect distractors.
-			  
-Present the MCQs in the following format:
-<MCQ>
-<Activity>
-<Question>
+Short answer questions:
 
-<Option A>
-<Option B>
-<Option C>
-<Option D>
-<Correct Answer>
-</MCQ>
-Repeat this process to create a minimum of three MCQs.
+for e.g:
 
-Here is an example format:
-<MCQ>
-<Activity>
-Cut a piece of paper into four square pieces. Cut each square piece further into four square pieces. Lay these pieces on the floor or a table so that the pieces acquire the shape of the original piece of paper (Fig. 5.1).
-</Activity>
-<Question>
-What shape do the pieces form when laid out on the floor or table?
-</Question>
+question: If you view your face in the curved surface of large spinning spoon,Do you get the image? Is it smaller or larger?
+answer: Yes, I can see my image. It is larger than my actual image.
+options =[]
+question_level: easy
 
-<Option A> A triangle </Option>
-<Option B> A rectangle </Option>
-<Option C> A square </Option>
-<Option D> A circle </Option>
-<Correct Answer> C </Correct Answer>
-</MCQ>
-Now, create at least three MCQs based on the provided activity.
- 	  
+question: If you view your face in the non curved surface of large spinning spoon,Do you get the image? Is it smaller or larger? compare this if you view your face in the curved surface of large spinning spoon.
+answer: Yes, I can see my image, but it is reverse in direction. It is same size as my actual image. In case of curved surface my face is bulg outside bigger in same direction
+options = []
+question_level: medium
+
+Mcq questions:
+
+question:When you view your face in the curved surface of a large shining spoon, how does the image appear?
+options:'[
+ "Larger than your actual face",
+ "Smaller than your actual face",
+ "Same size as your actual face",
+ "Distorted and unrecognizable"]
+
+Answer: Smaller than your actual face
+question_level: easy
+
+question: When you reverse the spoon and view your face on the other side, how does the image look like?
+options = [" Upright and larger than your face",
+"Inverted and larger than your face",
+"Upright and smaller than your face",
+"Inverted and smaller than your face"]
+
+Answer: Inverted and larger than your face
+question_level: medium
+
+Long Answer question:
+question: Describe the changes in the image of your face when you move a large shining spoon slowly away from your face. Additionally, compare the characteristics of the image on the concave and convex surfaces of the spoon.
+
+Answer: When you move the spoon slowly away from your face, the image in the concave surface (inner side of the spoon) initially appears smaller and becomes larger as you move it further away, eventually becoming inverted. In contrast, the convex surface (outer side of the spoon) shows an upright and diminished image, which remains consistent in its characteristics as you move the spoon away. Comparing the two surfaces, the concave side produces a real, inverted image at a certain distance, while the convex side always produces a virtual, upright, and smaller image.
+Difficulty level: hard
+
+
+Example, Activity: 2
+
+> Take about 3 mL of ethanol in a test tube and warm it
+gently in a water bath.
+> Add a 5% solution of alkaline potassium permanganate
+drop by drop to this solution.
+> Does the colour of potassium permanganate persist when
+it is added initially?
+> Why does the colour of potassium permanganate not
+disappear when excess is added?
+
+e.g 
+
+Short answer:
+
+question: Does the colour of potassium permanganate persist when it is added initially to the warm 3ml ethanol?
+answer: No, the colour of potassium permanganate does not persist when it is added initially because it reacts with the ethanol, causing the purple colour to disappear as the ethanol is oxidized.
+
+
+question level:medium
+
+question: "What happens to the colour of the potassium permanganate when excess is added to 3ml warm ethanol?"
+answer: "The colour of potassium permanganate does not disappear when excess is added."
+
+question level: easy
+
+e.g MCQ:
+
+question: When a 5% solution of alkaline potassium permanganate is added drop by drop to ethanol, why does the colour of potassium permanganate not disappear when excess is added?
+options: [
+" The ethanol is completely oxidized, potassium permanganate is in excess, ethanol is converted to acetic acid",
+" The ethanol reacts with water, potassium permanganate is diluted, ethanol evaporates",
+" The potassium permanganate decomposes, ethanol forms a layer, potassium permanganate changes color",
+" The ethanol is not oxidized, potassium permanganate evaporates, ethanol turns into gas"]
+answer: The ethanol is completely oxidized, potassium permanganate is in excess, ethanol is converted to acetic acid
+ 
+question level: medium
+ 
+
+DON'T GENERATE QUESTIONS LIKE THESE:
+
+ question: "What types of waste can be collected from your home for this activity?"
+ question: "What happens to the colour of the potassium permanganate when excess is added in this activity?"
+ question: "Does the colour of potassium permanganate persist when it is added initially?
+ question: "What types of waste material are suggested to collect for this activity?"
+ question: "Where is the collected waste material supposed to be buried for this decomposition activity?
+
+---> Questions should be meaningful and they should make sense to the students. 
+
 """},{"role": "user", "content": f"{prompt}:{paragraph}"}]
 	tools = [
 	{
@@ -785,7 +891,8 @@ Now, create at least three MCQs based on the provided activity.
 		messages=messages,
 		tools=tools,
 		tool_choice="required",
-		seed=100	 # auto is default, but we'll be explicit
+		seed=100,
+		max_tokens=4096	 # auto is default, but we'll be explicit
 	)
 	#print("response------------",response)
 	response_message = response.choices[0].message
@@ -809,6 +916,32 @@ Now, create at least three MCQs based on the provided activity.
 				topic=function_args.get("topic"),
 			)
 			return function_response
+		
+def claude_generate_activity_questions(paragraph,url,headers,prompt):
+	 
+	messeage_list = [
+		{
+			"role": "user",
+			"content": [
+				{"type": "text", "text": f"prompt: {prompt} and the activity :'''{paragraph}'''"}
+			]
+		}
+	]
+
+	response = client_anthropic.messages.create(
+		model="claude-3-5-sonnet-20240620",
+            max_tokens=4096,
+            temperature=0,
+            system= system_activity_questions,
+            messages=messeage_list,
+            tool_choice={"type":"tool","name":"generate_activity_questions"},
+            tools = tools_activity_questions,
+	)
+
+	response_json = response.content[0].input
+	function_response = json.dumps(response_json)
+
+	return function_response
 
 def generate_fill_in_the_blanks(paragraph,url,headers,prompt):
 	# Step 1: send the conversation and available functions to the model
@@ -946,11 +1079,11 @@ Column 1: A. [Item 1], B. [Item 2], C. [Item 3], D. [Item 4]
 Column 2: 1. [Corresponding item for A], 2. [Corresponding item for B], 3. [Corresponding item for
 C], 4. [Corresponding item for D]
 
-Options:
-a. [Matching combination]
-b. [Matching combination]
-c. [Matching combination]
-d. [Matching combination]
+Options:[
+ "Matching combination",
+ "Matching combination",
+ "Matching combination",
+ "Matching combination"]
 
 Answer: [Correct option letter and matching combination]
 </question_set>
@@ -968,13 +1101,14 @@ Column 1: A. Distances to the left of the origin, B. Distances measured perpendi
 
 Column 2: 1. Negative, 2. Negative, 3. Left of the mirror, 4. Left-hand side
 
-Options:
-a. A-1,B-2,C-3,D-4
-b. A-2,B-3,C-4,D-1
-c. A-4, B-1, C-2, D-3
-d. A-1,B-2,C-4,D-3
+Options:[
+"A-1,B-2,C-3,D-4",
+"A-2,B-3,C-4,D-1",
+"A-4, B-1, C-2, D-3",
+" A-1,B-2,C-4,D-3"
+	]
 
-Answer:  a. A-1,B-2,C-3,D-4
+Answer:  A-1,B-2,C-3,D-4
 
 """},{"role": "user", "content": f"{prompt}"}]
 	tools = [
@@ -1100,13 +1234,13 @@ Assertion (A): [Write the assertion here]
 
 Reason (R): [Write the reason here]
 
-Options:
-a) [Option a]
-b) [Option b]
-c) [Option c]
-d) [Option d]
-
-Answer: [Indicate the correct option letter]
+Options:[
+"Option a",
+"Option b",
+"Option c",
+"Option d"
+]
+Answer:  "option a"
  
 e.g:
 
@@ -1114,14 +1248,15 @@ question:
 Assertion (A): The focal length of a concave mirror is considered negative according to the New Cartesian Sign Convention.
 Reason (R): According to the New Cartesian Sign Convention, distances measured to the left of the pole (origin) along the principal axis are taken as negative.
 
-Options:
-a) Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of Assertion (A).
-b) Both Assertion (A) and Reason (R) are true but Reason (R) is not the correct explanation of Assertion (A). 
-c) Assertion (A) is false but Reason (R) is true.  
-d) Assertion (A) is true but Reason (R) is false. 
+Options:[
+ "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of Assertion (A).",
+ "Both Assertion (A) and Reason (R) are true but Reason (R) is not the correct explanation of Assertion (A). ",
+ "Assertion (A) is false but Reason (R) is true.  ",
+ "Assertion (A) is true but Reason (R) is false."
+ ]
 
 Answer:
-a) Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of Assertion (A).
+Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of Assertion (A).
 
 Ensure that your questions and explanations are accurate, clear, and directly related to the
 provided lesson topic.
@@ -2227,84 +2362,84 @@ with(tab7):
 
 with(tab8):
 	st.write(" Coming Soon...")
-	# final_data = []
-	# syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab8')
-	# class_name = st.selectbox(
-	# 			"Select class",
-	# 	('VI', 'VII', 'VIII', 'IX','X'),key="class_tab8")
-	# subject_name  = st.selectbox(
-	# 			"Select Subject",
-	# 	("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab8")
-	# lesson_name	 = st.selectbox(
-	# 			"Select lesson",
-	# 	("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab8")
+	final_data = []
+	syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab8')
+	class_name = st.selectbox(
+				"Select class",
+		('VI', 'VII', 'VIII', 'IX','X'),key="class_tab8")
+	subject_name  = st.selectbox(
+				"Select Subject",
+		("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab8")
+	lesson_name	 = st.selectbox(
+				"Select lesson",
+		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab8")
 	
-	# textbook_text = st.text_area("Enter the textbook questions here:", height=200,key='activity')
-	# prompt_textbook_questions = st.text_area("Enter the prompt:",key="textbook activity", height=200,value="workout answers for these textbook questions activity")
-	# json_struct={}
+	textbook_text = st.text_area("Enter the textbook questions here:", height=200,key='activity')
+	prompt_textbook_activity_questions = st.text_area("Enter the prompt:",key="textbook activity", height=200,value="workout answers for these textbook questions activity")
+	json_struct={}
 
-	# if st.button("Get Textbook Activity Questions"):
-	# 	if textbook_text:
-	# 		if syllabus == "CBSE":
-	# 			subject_collection = db.collection('cbse_subjects')
-	# 		elif syllabus == "SSC":
-	# 			subject_collection = db.collection('ssc_subjects')
-	# 		else:
-	# 			raise Exception("Wrong Syllabus")
+	if st.button("Get Textbook Activity Questions"):
+		if textbook_text:
+			if syllabus == "CBSE":
+				subject_collection = db.collection('cbse_subjects')
+			elif syllabus == "SSC":
+				subject_collection = db.collection('ssc_subjects')
+			else:
+				raise Exception("Wrong Syllabus")
 			 
-	# 		subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
-	# 		subject_id = subject_data['subject_id']
+			subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
+			subject_id = subject_data['subject_id']
 			 
-	# 		lesson_collection = db.collection('lessons')
-	# 		lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
-	# 		lesson_id = lesson_document.get()[0].id
-	# 		lp = generate_answers_for_textbook_activity_questions(textbook_text,chatgpt_url,chatgpt_headers,prompt_textbook_questions)
-	# 		print("lp----->",lp)
-	# 		lp_json=json.loads(lp)
+			lesson_collection = db.collection('lessons')
+			lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
+			lesson_id = lesson_document.get()[0].id
+			lp = claude_generate_activity_questions(paragraph=textbook_text,headers=claude_headers,url=claude_url,prompt=prompt_textbook_activity_questions)
+			print("lp----->",lp)
+			lp_json=json.loads(lp)
 
-	# 		for j in lp_json['questions']:
-	# 				json_struct={}
-	# 				json_struct['class']=class_name
-	# 				json_struct['subject']=subject_name
-	# 				json_struct['lesson']=lesson_name
-	# 				json_struct['question']=j['question']
-	# 				json_struct['options']=j['options']
-	# 				json_struct['answer']=j['answer']
-	# 				json_struct['level']=j['question_level']
-	# 				json_struct['question_type']=j['question_type']
-	# 				json_struct['type']='single-line'
-	# 				if(j['question_type_mcq_or_short_or_long']=='MCQ'):
-	# 					json_struct['marks']='1'
-	# 				elif(j['question_type_mcq_or_short_or_long']=='Short Question'):
-	# 					json_struct['marks']='2'
-	# 				else:
-	# 					json_struct['marks']='6'
-	# 				json_struct['syllabus']=syllabus
-	# 				json_struct['subject_id']=subject_id
-	# 				json_struct['lesson_id']=lesson_id
-	# 				json_struct['access']="public"
-	# 				json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type_mcq_or_short_or_long'],"textbook-question"]}
-	# 				#st.write(json_struct)
-	# 				final_data.append(json_struct)
-	# 				#st.write(final_data)
-	# 		save_json_to_text(final_data, 'output.txt')
-	# 		collection = db.collection("question-library")
-	# 		for item in final_data:
-	# 			doc = collection.document()
-	# 			item['question_id'] = doc.id
-	# 			doc.set(item)
-	# 		download_button_id = str(uuid.uuid4())
-	# 		# Provide a download link for the text file
-	# 		st.download_button(
-	# 					label="Download Textbook Questions",
-	# 					data=open('output.txt', 'rb').read(),
-	# 					file_name='output.txt',
-	# 					mime='text/plain',
-	# 				key=download_button_id
-	# 		)
+			for j in lp_json['questions']:
+					json_struct={}
+					json_struct['class']=class_name
+					json_struct['subject']=subject_name
+					json_struct['lesson']=lesson_name
+					json_struct['question']=j['question']
+					json_struct['options']=j['options']
+					json_struct['answer']=j['answer']
+					json_struct['level']=j['question_level']
+					json_struct['question_type']=j['question_type']
+					json_struct['type']='single-line'
+					if(j['question_type_mcq_or_short_or_long']=='MCQ'):
+						json_struct['marks']='1'
+					elif(j['question_type_mcq_or_short_or_long']=='Short Question'):
+						json_struct['marks']='2'
+					else:
+						json_struct['marks']='4'
+					json_struct['syllabus']=syllabus
+					json_struct['subject_id']=subject_id
+					json_struct['lesson_id']=lesson_id
+					json_struct['access']="public"
+					json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type_mcq_or_short_or_long'],"activity-questions"]}
+					#st.write(json_struct)
+					final_data.append(json_struct)
+					#st.write(final_data)
+			save_json_to_text(final_data, 'output.txt')
+			collection = db.collection("question-library")
+			for item in final_data:
+				doc = collection.document()
+				item['question_id'] = doc.id
+				doc.set(item)
+			download_button_id = str(uuid.uuid4())
+			# Provide a download link for the text file
+			st.download_button(
+						label="Download Textbook Questions",
+						data=open('output.txt', 'rb').read(),
+						file_name='output.txt',
+						mime='text/plain',
+					key=download_button_id
+			)
 			
-	# 	else:
-	# 		st.write("Please enter the text to generate Summary.")
+		else:
+			st.write("Please enter the text to generate Summary.")
 
 
 
@@ -2384,153 +2519,153 @@ with(tab9):
 
 
 with(tab10):
-	st.write("Coming Soon...")
-	# final_data = []
-	# syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab10')
-	# class_name = st.selectbox(
-	# 			"Select class",
-	# 	('VI', 'VII', 'VIII', 'IX','X'),key="class_tab10")
-	# subject_name  = st.selectbox(
-	# 			"Select Subject",
-	# 	("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab10")
-	# lesson_name	 = st.selectbox(
-	# 			"Select lesson",
-	# 	("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab10")
+	#st.write("Coming Soon...")
+	final_data = []
+	syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab10')
+	class_name = st.selectbox(
+				"Select class",
+		('VI', 'VII', 'VIII', 'IX','X'),key="class_tab10")
+	subject_name  = st.selectbox(
+				"Select Subject",
+		("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab10")
+	lesson_name	 = st.selectbox(
+				"Select lesson",
+		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab10")
 	
-	# textbook_text = st.text_area("Enter the content here:", height=200,key='match_the_following_questions')
-	# prompt_match_the_following_questions = st.text_area("Enter the prompt:",key="match the following questions", height=200,value="workout answers for match the following questions")
-	# json_struct={}
+	textbook_text = st.text_area("Enter the content here:", height=200,key='match_the_following_questions')
+	prompt_match_the_following_questions = st.text_area("Enter the prompt:",key="match the following questions", height=200,value="workout answers for match the following questions")
+	json_struct={}
 
-	# if st.button("Get Match the following questions"):
-	# 	if textbook_text:
-	# 		if syllabus == "CBSE":
-	# 			subject_collection = db.collection('cbse_subjects')
-	# 		elif syllabus == "SSC":
-	# 			subject_collection = db.collection('ssc_subjects')
-	# 		else:
-	# 			raise Exception("Wrong Syllabus")
+	if st.button("Get Match the following questions"):
+		if textbook_text:
+			if syllabus == "CBSE":
+				subject_collection = db.collection('cbse_subjects')
+			elif syllabus == "SSC":
+				subject_collection = db.collection('ssc_subjects')
+			else:
+				raise Exception("Wrong Syllabus")
 			 
-	# 		subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
-	# 		subject_id = subject_data['subject_id']
+			subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
+			subject_id = subject_data['subject_id']
 			 
-	# 		lesson_collection = db.collection('lessons')
-	# 		lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
-	# 		lesson_id = lesson_document.get()[0].id
-	# 		lp = generate_match_the_following_questions(textbook_text,chatgpt_url,chatgpt_headers,prompt_match_the_following_questions)
-	# 		print("lp----->",lp)
-	# 		lp_json=json.loads(lp)
+			lesson_collection = db.collection('lessons')
+			lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
+			lesson_id = lesson_document.get()[0].id
+			lp = generate_match_the_following_questions(textbook_text,chatgpt_url,chatgpt_headers,prompt_match_the_following_questions)
+			print("lp----->",lp)
+			lp_json=json.loads(lp)
 
-	# 		for j in lp_json['questions']:
-	# 				json_struct={}
-	# 				json_struct['class']=class_name
-	# 				json_struct['subject']=subject_name
-	# 				json_struct['lesson']=lesson_name
-	# 				json_struct['question']=j['question']
-	# 				json_struct['options']=j['options']
-	# 				json_struct['answer']=j['answer']
-	# 				json_struct['level']=j['question_level']
-	# 				json_struct['question_type']=j['question_type']
-	# 				json_struct['type']='single-line'
-	# 				json_struct['marks']='1'
-	# 				json_struct['syllabus']=syllabus
-	# 				json_struct['subject_id']=subject_id
-	# 				json_struct['lesson_id']=lesson_id
-	# 				json_struct['access']="public"
-	# 				json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type'],"Match-the-following"]}
-	# 				#st.write(json_struct)
-	# 				final_data.append(json_struct)
-	# 				#st.write(final_data)
-	# 		save_json_to_text(final_data, 'output.txt')
-	# 		collection = db.collection("question-library")
-	# 		for item in final_data:
-	# 			doc = collection.document()
-	# 			item['question_id'] = doc.id
-	# 			doc.set(item)
-	# 		download_button_id = str(uuid.uuid4())
-	# 		# Provide a download link for the text file
-	# 		st.download_button(
-	# 					label="Download Textbook Questions",
-	# 					data=open('output.txt', 'rb').read(),
-	# 					file_name='output.txt',
-	# 					mime='text/plain',
-	# 				key=download_button_id
-	# 		)
+			for j in lp_json['questions']:
+					json_struct={}
+					json_struct['class']=class_name
+					json_struct['subject']=subject_name
+					json_struct['lesson']=lesson_name
+					json_struct['question']=j['question']
+					json_struct['options']=j['options']
+					json_struct['answer']=j['answer']
+					json_struct['level']=j['question_level']
+					json_struct['question_type']=j['question_type']
+					json_struct['type']='single-line'
+					json_struct['marks']='1'
+					json_struct['syllabus']=syllabus
+					json_struct['subject_id']=subject_id
+					json_struct['lesson_id']=lesson_id
+					json_struct['access']="public"
+					json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type'],"Match-the-following"]}
+					#st.write(json_struct)
+					final_data.append(json_struct)
+					#st.write(final_data)
+			save_json_to_text(final_data, 'output.txt')
+			collection = db.collection("question-library")
+			for item in final_data:
+				doc = collection.document()
+				item['question_id'] = doc.id
+				doc.set(item)
+			download_button_id = str(uuid.uuid4())
+			# Provide a download link for the text file
+			st.download_button(
+						label="Download Textbook Questions",
+						data=open('output.txt', 'rb').read(),
+						file_name='output.txt',
+						mime='text/plain',
+					key=download_button_id
+			)
 			
-	# 	else:
-	# 		st.write("Please enter the text to generate Summary.")
+		else:
+			st.write("Please enter the text to generate Summary.")
 
 with(tab11):
-	st.write("Coming Soon...")
-	# final_data = []
-	# syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab11')
-	# class_name = st.selectbox(
-	# 			"Select class",
-	# 	('VI', 'VII', 'VIII', 'IX','X'),key="class_tab11")
-	# subject_name  = st.selectbox(
-	# 			"Select Subject",
-	# 	("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab11")
-	# lesson_name	 = st.selectbox(
-	# 			"Select lesson",
-	# 	("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab11")
+	#st.write("Coming Soon...")
+	final_data = []
+	syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab11')
+	class_name = st.selectbox(
+				"Select class",
+		('VI', 'VII', 'VIII', 'IX','X'),key="class_tab11")
+	subject_name  = st.selectbox(
+				"Select Subject",
+		("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab11")
+	lesson_name	 = st.selectbox(
+				"Select lesson",
+		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab11")
 	
-	# textbook_text = st.text_area("Enter the textbook questions here:", height=200,key='Assertion and Reason')
-	# prompt_assertion_and_reason_questions = st.text_area("Enter the prompt:",key="Assertion_and_Reason", height=200,value="workout answers for asseration and reason questions")
-	# json_struct={}
+	textbook_text = st.text_area("Enter the textbook questions here:", height=200,key='Assertion and Reason')
+	prompt_assertion_and_reason_questions = st.text_area("Enter the prompt:",key="Assertion_and_Reason", height=200,value="workout answers for asseration and reason questions")
+	json_struct={}
 
-	# if st.button("Get Assertion and Reason Questions"):
-	# 	if textbook_text:
-	# 		if syllabus == "CBSE":
-	# 			subject_collection = db.collection('cbse_subjects')
-	# 		elif syllabus == "SSC":
-	# 			subject_collection = db.collection('ssc_subjects')
-	# 		else:
-	# 			raise Exception("Wrong Syllabus")
+	if st.button("Get Assertion and Reason Questions"):
+		if textbook_text:
+			if syllabus == "CBSE":
+				subject_collection = db.collection('cbse_subjects')
+			elif syllabus == "SSC":
+				subject_collection = db.collection('ssc_subjects')
+			else:
+				raise Exception("Wrong Syllabus")
 			 
-	# 		subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
-	# 		subject_id = subject_data['subject_id']
+			subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
+			subject_id = subject_data['subject_id']
 			 
-	# 		lesson_collection = db.collection('lessons')
-	# 		lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
-	# 		lesson_id = lesson_document.get()[0].id
-	# 		lp = generate_assertion_and_reason(textbook_text,chatgpt_url,chatgpt_headers,prompt_assertion_and_reason_questions)
-	# 		print("lp----->",lp)
-	# 		lp_json=json.loads(lp)
+			lesson_collection = db.collection('lessons')
+			lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
+			lesson_id = lesson_document.get()[0].id
+			lp = generate_assertion_and_reason(textbook_text,chatgpt_url,chatgpt_headers,prompt_assertion_and_reason_questions)
+			print("lp----->",lp)
+			lp_json=json.loads(lp)
 
-	# 		for j in lp_json['questions']:
-	# 				json_struct={}
-	# 				json_struct['class']=class_name
-	# 				json_struct['subject']=subject_name
-	# 				json_struct['lesson']=lesson_name
-	# 				json_struct['question']=j['question']
-	# 				json_struct['options']=j['options']
-	# 				json_struct['answer']=j['answer']
-	# 				json_struct['level']=j['question_level']
-	# 				json_struct['question_type']=j['question_type']
-	# 				json_struct['type']='single-line'
-	# 				json_struct['marks']='1'
-	# 				json_struct['syllabus']=syllabus
-	# 				json_struct['subject_id']=subject_id
-	# 				json_struct['lesson_id']=lesson_id
-	# 				json_struct['access']="public"
-	# 				json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type'],"Fill-in-the-blank"]}
-	# 				#st.write(json_struct)
-	# 				final_data.append(json_struct)
-	# 				#st.write(final_data)
-	# 		save_json_to_text(final_data, 'output.txt')
-	# 		# collection = db.collection("question-library")
-	# 		# for item in final_data:
-	# 		# 	doc = collection.document()
-	# 		# 	item['question_id'] = doc.id
-	# 		# 	doc.set(item)
-	# 		download_button_id = str(uuid.uuid4())
-	# 		# Provide a download link for the text file
-	# 		st.download_button(
-	# 					label="Download Textbook Questions",
-	# 					data=open('output.txt', 'rb').read(),
-	# 					file_name='output.txt',
-	# 					mime='text/plain',
-	# 				key=download_button_id
-	# 		)
+			for j in lp_json['questions']:
+					json_struct={}
+					json_struct['class']=class_name
+					json_struct['subject']=subject_name
+					json_struct['lesson']=lesson_name
+					json_struct['question']=j['question']
+					json_struct['options']=j['options']
+					json_struct['answer']=j['answer']
+					json_struct['level']=j['question_level']
+					json_struct['question_type']=j['question_type']
+					json_struct['type']='single-line'
+					json_struct['marks']='1'
+					json_struct['syllabus']=syllabus
+					json_struct['subject_id']=subject_id
+					json_struct['lesson_id']=lesson_id
+					json_struct['access']="public"
+					json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type'],"Assertion and Reason"]}
+					#st.write(json_struct)
+					final_data.append(json_struct)
+					#st.write(final_data)
+			save_json_to_text(final_data, 'output.txt')
+			collection = db.collection("question-library")
+			for item in final_data:
+				doc = collection.document()
+				item['question_id'] = doc.id
+				doc.set(item)
+			download_button_id = str(uuid.uuid4())
+			# Provide a download link for the text file
+			st.download_button(
+						label="Download Textbook Questions",
+						data=open('output.txt', 'rb').read(),
+						file_name='output.txt',
+						mime='text/plain',
+					key=download_button_id
+			)
 			
-	# 	else:
-	# 		st.write("Please enter the text to generate Summary.")
+		else:
+			st.write("Please enter the text to generate Summary.")
