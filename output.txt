@@ -3,64 +3,9 @@
         "class": "X",
         "subject": "SCIENCE",
         "lesson": "LESSON13",
-        "question": "What is the color change observed when the solution of magnesium ash is tested with red litmus paper?",
+        "question": "What is the purpose of keeping the plant in a dark room for three days before the experiment?",
         "options": [],
-        "answer": "The red litmus paper turns blue, indicating that the solution is basic.",
-        "level": "easy",
-        "question_type": "Understand",
-        "type": "single-line",
-        "marks": "2",
-        "syllabus": "CBSE",
-        "subject_id": "51n5H9BPbeUsNhfOSAU3",
-        "lesson_id": "Cj5m532tYa6V5upBKLR1",
-        "access": "public",
-        "metadata": {
-            "tags": [
-                "X",
-                "LESSON13",
-                "SCIENCE",
-                "Short Question",
-                "activity-questions"
-            ]
-        }
-    },
-    {
-        "class": "X",
-        "subject": "SCIENCE",
-        "lesson": "LESSON13",
-        "question": "Which of the following correctly describes the nature of the product formed when magnesium is burned?",
-        "options": [
-            "Acidic",
-            "Basic",
-            "Neutral",
-            "Amphoteric"
-        ],
-        "answer": "Basic",
-        "level": "easy",
-        "question_type": "Remember",
-        "type": "single-line",
-        "marks": "1",
-        "syllabus": "CBSE",
-        "subject_id": "51n5H9BPbeUsNhfOSAU3",
-        "lesson_id": "Cj5m532tYa6V5upBKLR1",
-        "access": "public",
-        "metadata": {
-            "tags": [
-                "X",
-                "LESSON13",
-                "SCIENCE",
-                "MCQ",
-                "activity-questions"
-            ]
-        }
-    },
-    {
-        "class": "X",
-        "subject": "SCIENCE",
-        "lesson": "LESSON13",
-        "question": "What is the chemical name of the compound formed when magnesium burns in air?",
-        "options": [],
-        "answer": "Magnesium oxide (MgO)",
+        "answer": "The purpose of keeping the plant in a dark room for three days is to ensure that all the starch in the leaves gets used up. This creates a 'blank slate' for the experiment, allowing us to observe new starch production during photosynthesis.",
         "level": "medium",
         "question_type": "Understand",
         "type": "single-line",
@@ -83,9 +28,34 @@
         "class": "X",
         "subject": "SCIENCE",
         "lesson": "LESSON13",
-        "question": "How does the solution obtained from sulphur fumes react with blue litmus paper?",
+        "question": "Why is the leaf immersed in boiling water and then in alcohol during the experiment?",
         "options": [],
-        "answer": "The blue litmus paper turns red, indicating that the solution is acidic.",
+        "answer": "The leaf is immersed in boiling water to kill the leaf tissues and break down cell membranes. It is then immersed in alcohol to remove chlorophyll, which gives the leaf its green color. This process, called decolourisation, makes it easier to observe the starch test results.",
+        "level": "hard",
+        "question_type": "Analyze",
+        "type": "single-line",
+        "marks": "2",
+        "syllabus": "CBSE",
+        "subject_id": "51n5H9BPbeUsNhfOSAU3",
+        "lesson_id": "Cj5m532tYa6V5upBKLR1",
+        "access": "public",
+        "metadata": {
+            "tags": [
+                "X",
+                "LESSON13",
+                "SCIENCE",
+                "Short Question",
+                "activity-questions"
+            ]
+        }
+    },
+    {
+        "class": "X",
+        "subject": "SCIENCE",
+        "lesson": "LESSON13",
+        "question": "What is the expected result when testing the solution formed by dissolving magnesium ash in water with litmus paper?",
+        "options": [],
+        "answer": "When testing the solution formed by dissolving magnesium ash in water with litmus paper, the expected result is that red litmus paper will turn blue, and blue litmus paper will remain blue. This indicates that the solution is basic.",
         "level": "medium",
         "question_type": "Apply",
         "type": "single-line",
@@ -108,15 +78,75 @@
         "class": "X",
         "subject": "SCIENCE",
         "lesson": "LESSON13",
-        "question": "Which of the following is the correct chemical equation for the burning of magnesium in air?",
+        "question": "Which of the following is NOT a step in the starch detection experiment?",
         "options": [
-            "Mg + O2 \u2192 MgO2",
-            "2Mg + O2 \u2192 2MgO",
-            "Mg + O \u2192 MgO",
-            "Mg + 2O2 \u2192 Mg(O2)2"
+            "Keeping the plant in sunlight for about six hours",
+            "Immersing the leaf in a beaker containing alcohol",
+            "Dipping the leaf in a concentrated acid solution",
+            "Testing the leaf with a dilute iodine solution"
         ],
-        "answer": "2Mg + O2 \u2192 2MgO",
+        "answer": "Dipping the leaf in a concentrated acid solution",
+        "level": "easy",
+        "question_type": "Remember",
+        "type": "single-line",
+        "marks": "1",
+        "syllabus": "CBSE",
+        "subject_id": "51n5H9BPbeUsNhfOSAU3",
+        "lesson_id": "Cj5m532tYa6V5upBKLR1",
+        "access": "public",
+        "metadata": {
+            "tags": [
+                "X",
+                "LESSON13",
+                "SCIENCE",
+                "MCQ",
+                "activity-questions"
+            ]
+        }
+    },
+    {
+        "class": "X",
+        "subject": "SCIENCE",
+        "lesson": "LESSON13",
+        "question": "What is the purpose of using iodine solution in the leaf experiment?",
+        "options": [
+            "To remove chlorophyll from the leaf",
+            "To detect the presence of starch",
+            "To kill the leaf tissues",
+            "To promote photosynthesis"
+        ],
+        "answer": "To detect the presence of starch",
         "level": "medium",
+        "question_type": "Understand",
+        "type": "single-line",
+        "marks": "1",
+        "syllabus": "CBSE",
+        "subject_id": "51n5H9BPbeUsNhfOSAU3",
+        "lesson_id": "Cj5m532tYa6V5upBKLR1",
+        "access": "public",
+        "metadata": {
+            "tags": [
+                "X",
+                "LESSON13",
+                "SCIENCE",
+                "MCQ",
+                "activity-questions"
+            ]
+        }
+    },
+    {
+        "class": "X",
+        "subject": "SCIENCE",
+        "lesson": "LESSON13",
+        "question": "Which of the following products is likely to be formed when sulphur is burned and the fumes are collected in water?",
+        "options": [
+            "Sulphuric acid",
+            "Sodium hydroxide",
+            "Magnesium oxide",
+            "Potassium chloride"
+        ],
+        "answer": "Sulphuric acid",
+        "level": "hard",
         "question_type": "Apply",
         "type": "single-line",
         "marks": "1",
@@ -138,34 +168,9 @@
         "class": "X",
         "subject": "SCIENCE",
         "lesson": "LESSON13",
-        "question": "What is the nature of the product formed when sulphur is burned?",
+        "question": "Compare and contrast the results of burning magnesium and sulphur in terms of the acidity or basicity of their products when dissolved in water. Explain the chemical reactions involved and their implications for understanding acid-base chemistry.",
         "options": [],
-        "answer": "Acidic",
-        "level": "easy",
-        "question_type": "Remember",
-        "type": "single-line",
-        "marks": "2",
-        "syllabus": "CBSE",
-        "subject_id": "51n5H9BPbeUsNhfOSAU3",
-        "lesson_id": "Cj5m532tYa6V5upBKLR1",
-        "access": "public",
-        "metadata": {
-            "tags": [
-                "X",
-                "LESSON13",
-                "SCIENCE",
-                "Short Question",
-                "activity-questions"
-            ]
-        }
-    },
-    {
-        "class": "X",
-        "subject": "SCIENCE",
-        "lesson": "LESSON13",
-        "question": "Explain the chemical reactions that occur when magnesium burns in air and when the resulting ash is dissolved in water. Write the balanced chemical equations for both reactions.",
-        "options": [],
-        "answer": "When magnesium burns in air, it reacts with oxygen to form magnesium oxide. The balanced equation for this reaction is:\n2Mg + O2 \u2192 2MgO\n\nWhen magnesium oxide (the ash) is dissolved in water, it forms magnesium hydroxide, which is a base. The balanced equation for this reaction is:\nMgO + H2O \u2192 Mg(OH)2\n\nThe magnesium hydroxide solution is basic, which is why it turns red litmus paper blue.",
+        "answer": "When magnesium is burned, it forms magnesium oxide (MgO), which when dissolved in water produces magnesium hydroxide (Mg(OH)2), a basic solution. The reaction can be represented as: Mg + O2 \u2192 MgO, then MgO + H2O \u2192 Mg(OH)2. This solution turns red litmus blue, indicating its basic nature. On the other hand, when sulphur is burned, it forms sulphur dioxide (SO2), which when dissolved in water produces sulphurous acid (H2SO3), an acidic solution. The reaction can be represented as: S + O2 \u2192 SO2, then SO2 + H2O \u2192 H2SO3. This solution turns blue litmus red, indicating its acidic nature. These reactions demonstrate how different elements can produce opposite results in terms of acidity and basicity when burned and their products are dissolved in water, highlighting the diverse nature of chemical reactions and their products in acid-base chemistry.",
         "level": "hard",
         "question_type": "Analyze",
         "type": "single-line",
@@ -188,34 +193,9 @@
         "class": "X",
         "subject": "SCIENCE",
         "lesson": "LESSON13",
-        "question": "What gas is produced when sulphur burns in air? Write the balanced chemical equation for this reaction and the subsequent reaction when the gas is dissolved in water.",
+        "question": "Describe the process of photosynthesis as demonstrated in the leaf experiment. Explain how each step of the experiment contributes to our understanding of where and how photosynthesis occurs in plants.",
         "options": [],
-        "answer": "When sulphur burns in air, it produces sulphur dioxide gas. The balanced equation for this reaction is:\nS + O2 \u2192 SO2\n\nWhen sulphur dioxide is dissolved in water, it forms sulphurous acid. The balanced equation for this reaction is:\nSO2 + H2O \u2192 H2SO3\n\nThe sulphurous acid solution is acidic, which is why it turns blue litmus paper red.",
-        "level": "hard",
-        "question_type": "Create",
-        "type": "single-line",
-        "marks": "4",
-        "syllabus": "CBSE",
-        "subject_id": "51n5H9BPbeUsNhfOSAU3",
-        "lesson_id": "Cj5m532tYa6V5upBKLR1",
-        "access": "public",
-        "metadata": {
-            "tags": [
-                "X",
-                "LESSON13",
-                "SCIENCE",
-                "Long Question",
-                "activity-questions"
-            ]
-        }
-    },
-    {
-        "class": "X",
-        "subject": "SCIENCE",
-        "lesson": "LESSON13",
-        "question": "Compare and contrast the products formed by burning magnesium and sulphur in terms of their chemical nature and reactions with water.",
-        "options": [],
-        "answer": "Burning magnesium produces magnesium oxide (MgO), which is a basic oxide. When dissolved in water, it forms magnesium hydroxide, Mg(OH)2, a base that turns red litmus blue.\n\nBurning sulphur produces sulphur dioxide (SO2), which is an acidic oxide. When dissolved in water, it forms sulphurous acid, H2SO3, an acid that turns blue litmus red.\n\nThe key difference is that magnesium, a metal, forms a basic oxide, while sulphur, a non-metal, forms an acidic oxide. This demonstrates the general trend that metallic oxides are typically basic, while non-metallic oxides are typically acidic.",
+        "answer": "The leaf experiment demonstrates the process of photosynthesis by showing where starch, a product of photosynthesis, is produced in the leaf. First, the plant is kept in darkness to use up existing starch. Then, it's exposed to sunlight, allowing photosynthesis to occur. The leaf is then tested for starch using iodine, which turns blue-black in the presence of starch. This color change only occurs in the green parts of the leaf, indicating that photosynthesis happens in these areas. The experiment shows that chlorophyll (giving the green color) is necessary for photosynthesis, and that light is required for the process to occur. By comparing the starch distribution to the original leaf tracing, we can see that photosynthesis is localized to the chlorophyll-containing regions of the leaf, demonstrating the crucial role of chlorophyll in the photosynthetic process.",
         "level": "hard",
         "question_type": "Evaluate",
         "type": "single-line",
