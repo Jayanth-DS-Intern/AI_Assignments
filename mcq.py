@@ -2101,7 +2101,7 @@ with(tab4):
 	
 	if st.button("Generate Assignment"):
 		if topic_assign:
-			subject_id = subjects_id_mapping[st.session_state["subjectes_MCQ"]]
+			subject_id = subjects_id_mapping[st.session_state["subjectes_ASSIGN"]]
 			lesson_id = lesson_id_mapping[lesson_name]
 
 			lp = generate_assignment(topic_assign,chatgpt_url,chatgpt_headers,prompt_topic_assign)
