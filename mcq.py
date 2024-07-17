@@ -19,9 +19,13 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import anthropic
 from anthropic import Client
+from PIL import Image
+import tempfile
+import base64
+import io
 # from dotenv import load_dotenv
 # load_dotenv()
-from system_tools import system_activity_questions,tools_activity_questions
+from system_tools import system_activity_questions,tools_activity_questions,system_case_based_questions,tools_case_based_questions,system_diagram_based_questions,tools_diagram_based_questions
 
 data_cred={"type": "service_account",
 		"project_id": os.getenv("project_id"),
@@ -36,12 +40,20 @@ data_cred={"type": "service_account",
 	"universe_domain":"googleapis.com"}
 
 
+def initialize_firebase():
+    # Check if any Firebase app exists
+    if not firebase_admin._apps:
+        # Initialize the default app
+        cred = credentials.Certificate(data_cred)
+        firebase_admin.initialize_app(cred)
+    
+    # Now, we can create a new app with a unique name if needed
+    app = firebase_admin.initialize_app(credentials.Certificate(data_cred), name=str(uuid.uuid4()))
+    
+    return firestore.client(app)
 
-if not firebase_admin._apps:
-	cred = credentials.Certificate(data_cred) 
-	app = firebase_admin.initialize_app(cred)
- 
-db = firestore.client()
+# Use the function to get a Firestore client
+db = initialize_firebase()
 
 client = OpenAI(
   api_key=os.getenv("openaikey"),  # this is also the default, it can be omitted
@@ -65,7 +77,7 @@ chatgpt_headers = {
 	"content-type": "application/json",
 	"Authorization":"Bearer {}".format(os.getenv("openaikey"))}
 
-tab1, tab2, tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11 = st.tabs(["MCQ", "Summary", "Lesson Plan","Assignments","Topic Segregation","Brain Busters","Textbook Questions","Activity Questions","Fill in the blanks","Match the following","Assertion and Reason"])
+tab1, tab2, tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11,tab12,tab13 = st.tabs(["MCQ", "Summary", "Lesson Plan","Assignments","Topic Segregation","Brain Busters","Textbook Questions","Activity Questions","Fill in the blanks","Match the following","Assertion and Reason","Case-Based-Questions","Diagram Based Questions"])
 
 paragraph="""Food in the form of a soft slimy substance where some
 proteins and carbohydrates have already been broken down
@@ -1701,30 +1713,81 @@ Ensure the questions and options are closely related to the content of the provi
 
 			
 with(tab1):
+
+	if "syllabuses_MCQ" not in st.session_state:
+		st.session_state["syllabuses_MCQ"] = None
+	if "classes_MCQ" not in st.session_state:
+		st.session_state["classes_MCQ"] = None
+	if "subjectes_MCQ" not in st.session_state:
+		st.session_state["subjectes_MCQ"] = None
+	if "lessones_MCQ" not in st.session_state:
+		st.session_state["lessones_MCQ"] = None
+ 
 	# Upload image
 	uploaded_image = st.file_uploader("Upload an image...", type=["png", "jpg", "jpeg"])
 	uploaded_pdf = st.file_uploader("Upload a PDF file", type="pdf")
 	final_data=[]
-	#option = st.selectbox(
-		#'Choose Number of Questions:',
-		#('5', '10', '15', '20'))
-	# If an image is uploaded, display and process it
+ 
 
-	syllabus  = st.selectbox(
-				"Select Syllabus",
-		("CBSE", "SSC"),key="syllabus")
-	class_name = st.selectbox(
-				"Select class",
-		('VI', 'VII', 'VIII', 'IX','X'),key="class")
-	subject_name  = st.selectbox(
-				"Select Subject",
-		("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject")
-	lesson_name	 = st.selectbox(
-				"Select lesson",
-		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name")
-	#paragraph = st.text_area("Enter a paragraph:",text, height=200)
+	syllabus_options_ids = []
+	for doc in db.collection("syllabus-db").stream():
+		print(doc)
+		syllabus_options_ids.append(doc.id)
+	syllabus_options = []
+	for item in syllabus_options_ids:
+		syllabus_options.append(db.collection("syllabus-db").document(item).get().to_dict()['syllabus'])
+	syllabus = st.selectbox("Select Syllabus", syllabus_options,key="syllabus_options_MCQ")
+	if syllabus != st.session_state["syllabuses_MCQ"]:
+		st.session_state["syllabuses_MCQ"] = syllabus
+	 
+	 
 
-	
+	if syllabus:
+		classes_option_ids = [doc.id for doc in db.collection("classes").stream()]
+		classes_options = []
+		for item in classes_option_ids:
+			classs = db.collection("classes").document(item).get().to_dict()['display_name']
+			classes_options.append(classs)
+
+		class_name = st.selectbox("Select Class", classes_options, key = "classes_options_MCQ")
+		print("class_selected----->",class_name)
+		if class_name != st.session_state["classes_MCQ"]:
+			st.session_state["classes_MCQ"] = class_name
+
+	print("syllabus------------>",syllabus)
+	if "classes_MCQ" in st.session_state:
+		subject_option_ids = [doc.id for doc in db.collection("subjects").where("class.display_name", "==", class_name).where("syllabus.syllabus", "==", syllabus).stream()]
+		if not subject_option_ids:
+			st.write(f"No subjects found in {class_name} of {syllabus}")
+		else:
+			subjects_options = []
+			subjects_id_mapping = {}
+			print("subject-option-ids----------->",subject_option_ids)
+			for item in subject_option_ids:
+				subject = db.collection("subjects").document(item).get().to_dict()['subject']
+				subjects_id_mapping[subject] = item
+				subjects_options.append(subject)
+			print('subject_options-------->',subjects_options)
+			if st.session_state["subjectes_MCQ"] is not None and st.session_state["subjectes_MCQ"] in subjects_options:
+				default_index = subjects_options.index(st.session_state["subjectes_MCQ"])
+			else:
+				default_index = 0  # or set to a different default index
+
+			subject_name = st.selectbox("Select Subject", subjects_options, index=default_index,key='subject_options_MCQ')
+
+			if subject_name != st.session_state["subjectes_MCQ"]:
+				st.session_state["subjectes_MCQ"] = subject_name
+			
+			if "subjectes_MCQ" in st.session_state:
+				lessons_data = db.collection("lessons").where("subject_details.subject_id", "==", subjects_id_mapping[st.session_state["subjectes_MCQ"]]).get()
+				lesson_options = []
+				lesson_id_mapping = {}
+				for item in lessons_data:
+					lesson = item.to_dict()['lesson_name']
+					lesson_id_mapping[lesson] = item.id
+					lesson_options.append(lesson)
+				lesson_name = st.selectbox("Select Lesson", lesson_options,key= "lesson_options_MCQ")
+				st.session_state["lessones_MCQ"] = lesson_name
 	
 	if uploaded_image is not None:
 		# Display the uploaded image
@@ -1741,7 +1804,7 @@ with(tab1):
 			
 					if syllabus == "CBSE":
 						subject_collection = db.collection('cbse_subjects')
-					elif syllabus == "SSC":
+					elif syllabus == "SSC_AP":
 						subject_collection = db.collection('ssc_subjects')
 					else:
 						raise Exception("Wrong Syllabus")
@@ -1774,11 +1837,11 @@ with(tab1):
 						final_data.append(json_struct)
 					#st.write(final_data)
 					save_json_to_text(final_data, 'output.txt')
-					collection = db.collection("question-library")
-					for item in final_data:
-						doc = collection.document()
-						item['question_id'] = doc.id
-						doc.set(item)
+					# collection = db.collection("question-library")
+					# for item in final_data:
+					# 	doc = collection.document()
+					# 	item['question_id'] = doc.id
+					# 	doc.set(item)
 					download_button_id = str(uuid.uuid4())
 					# Provide a download link for the text file
 					st.download_button(
@@ -1802,19 +1865,10 @@ with(tab1):
 		
 		
 			if st.button("Generate MCQs via text"):
-				if syllabus == "CBSE":
-					subject_collection = db.collection('cbse_subjects')
-				elif syllabus == "SSC":
-					subject_collection = db.collection('ssc_subjects')
-				else:
-					raise Exception("Wrong Syllabus")
 				 
-				subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
-				subject_id = subject_data['subject_id']
-				 
-				lesson_collection = db.collection('lessons')
-				lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
-				lesson_id = lesson_document.get()[0].id
+				subject_id = subjects_id_mapping[st.session_state["subjectes_MCQ"]]
+				lesson_id = lesson_id_mapping[lesson_name]
+
 				if paragraph:
 					mcqs = run_conversation(paragraph,prompt_mcq)
 					mcq_json=json.loads(mcqs)
@@ -1955,27 +2009,91 @@ with(tab3):
 			st.write("Please enter the text to generate Summary.")
 
 with(tab4):
-	# Upload image
 	final_data=[]
-	#option = st.selectbox(
-		#'Choose Number of Questions:',
-		#('5', '10', '15', '20'))
-	# If an image is uploaded, display and process it
 
-	syllabus  = st.selectbox(
-				"Select Syllabus",
-		("CBSE", "SSC"),key="syllabus1")
-	class_name = st.selectbox(
-				"Select class",
-		('VI', 'VII', 'VIII', 'IX','X'),key="class1")
-	subject_name  = st.selectbox(
-				"Select Subject",
-		("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject1")
-	lesson_name	 = st.selectbox(
-				"Select lesson",
-		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name1")
-	#paragraph = st.text_area("Enter a paragraph:",text, height=200)
+	if "syllabuses_ASSIGN" not in st.session_state:
+		st.session_state["syllabuses_ASSIGN"] = None
+	if "classes_ASSIGN" not in st.session_state:
+		st.session_state["classes_ASSIGN"] = None
+	if "subjectes_ASSIGN" not in st.session_state:
+		st.session_state["subjectes_ASSIGN"] = None
+	if "lessones_ASSIGN" not in st.session_state:
+		st.session_state["lessones_ASSIGN"] = None
+ 
+	 
+	 
 
+	# syllabus  = st.selectbox(
+	# 			"Select Syllabus",
+	# 	("CBSE", "SSC"),key="syllabus1")
+
+	# Create a dropdown for syllabus
+	syllabus_options_ids = []
+	for doc in db.collection("syllabus-db").stream():
+		print(doc)
+		syllabus_options_ids.append(doc.id)
+	syllabus_options = []
+	for item in syllabus_options_ids:
+		syllabus_options.append(db.collection("syllabus-db").document(item).get().to_dict()['syllabus'])
+	syllabus = st.selectbox("Select Syllabus", syllabus_options,key="syllabus_options_ASSIGN")
+	if syllabus != st.session_state["syllabuses_ASSIGN"]:
+		st.session_state["syllabuses_ASSIGN"] = syllabus
+
+	# class_name = st.selectbox(
+	# 			"Select class",
+	# 	('VI', 'VII', 'VIII', 'IX','X'),key="class1")
+
+	if syllabus:
+		classes_option_ids = [doc.id for doc in db.collection("classes").stream()]
+		classes_options = []
+		for item in classes_option_ids:
+			classs = db.collection("classes").document(item).get().to_dict()['display_name']
+			classes_options.append(classs)
+
+		class_name = st.selectbox("Select Class", classes_options, key = "classes_options_ASSIGN")
+		print("class_selected----->",class_name)
+		if class_name != st.session_state["classes_ASSIGN"]:
+			st.session_state["classes_ASSIGN"] = class_name
+
+	# subject_name  = st.selectbox(
+	# 			"Select Subject",
+	# 	("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject1")
+
+	print("syllabus------------>",syllabus)
+	if "classes_ASSIGN" in st.session_state:
+		subject_option_ids = [doc.id for doc in db.collection("subjects").where("class.display_name", "==", class_name).where("syllabus.syllabus", "==", syllabus).stream()]
+		if not subject_option_ids:
+			st.write(f"No subjects found in {class_name} of {syllabus}")
+		else:
+			subjects_options = []
+			subjects_id_mapping = {}
+			print("subject-option-ids----------->",subject_option_ids)
+			for item in subject_option_ids:
+				subject = db.collection("subjects").document(item).get().to_dict()['subject']
+				subjects_id_mapping[subject] = item
+				subjects_options.append(subject)
+			print('subject_options-------->',subjects_options)
+			if st.session_state["subjectes_ASSIGN"] is not None and st.session_state["subjectes_ASSIGN"] in subjects_options:
+				default_index = subjects_options.index(st.session_state["subjectes_ASSIGN"])
+			else:
+				default_index = 0  # or set to a different default index
+
+			subject_name = st.selectbox("Select Subject", subjects_options, index=default_index,key='subject_options_ASSIGN')
+
+			if subject_name != st.session_state["subjectes_ASSIGN"]:
+				st.session_state["subjectes_ASSIGN"] = subject_name
+			
+			# Create a dropdown for lesson
+			if "subjectes_ASSIGN" in st.session_state:
+				lessons_data = db.collection("lessons").where("subject_details.subject_id", "==", subjects_id_mapping[st.session_state["subjectes_ASSIGN"]]).get()
+				lesson_options = []
+				lesson_id_mapping = {}
+				for item in lessons_data:
+					lesson = item.to_dict()['lesson_name']
+					lesson_id_mapping[lesson] = item.id
+					lesson_options.append(lesson)
+				lesson_name = st.selectbox("Select Lesson", lesson_options,key= "lesson_options_ASSIGN")
+				st.session_state["lessones_ASSIGN"] = lesson_name
 	
 	topic_assign = st.text_area("Enter the topic for Assignment:", height=200)
 	prompt_topic_assign = st.text_area("Enter the prompt:",key="topic_assign", height=200)
@@ -1983,19 +2101,9 @@ with(tab4):
 	
 	if st.button("Generate Assignment"):
 		if topic_assign:
-			if syllabus == "CBSE":
-				subject_collection = db.collection('cbse_subjects')
-			elif syllabus == "SSC":
-				subject_collection = db.collection('ssc_subjects')
-			else:
-				raise Exception("Wrong Syllabus")
-			 
-			subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
-			subject_id = subject_data['subject_id']
-			 
-			lesson_collection = db.collection('lessons')
-			lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
-			lesson_id = lesson_document.get()[0].id
+			subject_id = subjects_id_mapping["subjectes_ASSIGN"]
+			lesson_id = lesson_id_mapping[lesson_name]
+
 			lp = generate_assignment(topic_assign,chatgpt_url,chatgpt_headers,prompt_topic_assign)
 			lp_json=json.loads(lp)
 			for j in lp_json['questions']:
@@ -2076,43 +2184,19 @@ with(tab6):
 	syllabus = st.selectbox("Select Syllabus", syllabus_options)
 	if syllabus != st.session_state["syllabuses"]:
 		st.session_state["syllabuses"] = syllabus
-	#st.session_state["syllabus"] = syllabus
- 
-	# # Create a dropdown for syllabus
-	# syllabus_options = [doc.id for doc in db.collection("syllabus-db").stream()]
-	# syllabus_option_ids = [doc.id for doc in db.collection("syllabus-db").stream()]
-	# syllabus_options = []
-	# for item in syllabus_option_ids:
-	# 	syllabus_options.append(db.collection("syllabus-db").document(item).get().to_dict()['syllabus'])
-	# syllabus_brain = st.selectbox("Select Syllabus", syllabus_options)
-   
-	# Create a dropdown for class
+	 
 	if syllabus:
 		classes_option_ids = [doc.id for doc in db.collection("classes").stream()]
 		classes_options = []
 		for item in classes_option_ids:
 			classs = db.collection("classes").document(item).get().to_dict()['display_name']
 			classes_options.append(classs)
-		 
-
-		# if st.session_state["classes"] is not None and st.session_state["classes"] in classes_options:
-		# 	default_index = classes_options.index(st.session_state["classes"])
-		# else:
-		# 	default_index = 0  # or set to a different default index
 
 		class_selected = st.selectbox("Select Class", classes_options)
 		print("class_selected----->",class_selected)
 		if class_selected != st.session_state["classes"]:
 			st.session_state["classes"] = class_selected
 
-	# # Create a dropdown for class
-	# if syllabus_brain:
-	# 	classes_option_ids = [doc.id for doc in db.collection("classes").stream()]
-	# 	classes_options = []
-	# 	for item in classes_option_ids:
-	# 		classs = db.collection("classes").document(item).get().to_dict()['display_name']
-	# 		classes_options.append(classs)
-	# 	class_brain = st.selectbox("Select Class", classes_options)
 		
 	# Create a dropdown for subject
 	print("syllabus------------>",syllabus)
@@ -2138,17 +2222,6 @@ with(tab6):
 
 			if subject_selected != st.session_state["subjectes"]:
 				st.session_state["subjectes"] = subject_selected
-
-			# # Create a dropdown for subject
-			# if class_brain:
-			# 	subject_option_ids = [doc.id for doc in db.collection("subjects").where("class.display_name", "==", class_brain).where("syllabus.syllabus", "==", syllabus).stream()]
-			# 	subjects_options = []
-			# 	subjects_id_mapping = {}
-			# 	for item in subject_option_ids:
-			# 		subject = db.collection("subjects").document(item).get().to_dict()['subject']
-			# 		subjects_id_mapping[subject] = item
-			# 		subjects_options.append(subject)
-			# 	subject_brain = st.selectbox("Select Subject", subjects_options)
 			
 			# Create a dropdown for lesson
 			if "subjectes" in st.session_state:
@@ -2164,20 +2237,6 @@ with(tab6):
 				# lesson_options = ["LESSON1", "LESSON2"]
 				lesson_selected = st.selectbox("Select Lesson", lesson_options)
 				st.session_state["lessones"] = lesson_selected
-
-			# Create a dropdown for lesson
-			# if subject_brain:
-			# 	lessons_data = db.collection("lessons").where("subject_details.subject_id", "==", subjects_id_mapping[subject_brain]).get()
-			# 	lesson_options = []
-			# 	lesson_id_mapping = {}
-			# 	for item in lessons_data:
-			# 		lesson = item.to_dict()['lesson_name']
-			# 		lesson_id_mapping[lesson] = item.id
-			# 		lesson_options.append(lesson)
-				# lesson_options
-				# lesson_options = [doc.id for doc in db.collection("lessons").where("subject", "==", subject_brain).stream()]
-				# lesson_options = ["LESSON1", "LESSON2"]
-				# lesson_brain = st.selectbox("Select Lesson", lesson_options)
 				
 		
 			# Create a dropdown for topic/activity
@@ -2185,11 +2244,6 @@ with(tab6):
 				section_selected = st.selectbox("Select Section Type", ["topics", "activities"])
 				st.session_state["sectiones"] = section_selected
 
-			# # Create a dropdown for topic/activity
-			# if lesson_brain:
-			# 	section_selected = st.selectbox("Select Section Type", ["topics", "activities"])
-				
-		
 				# Create a dropdown for lesson
 				#st.write(lesson_id_mapping)
 				if "sectiones" in st.session_state:
@@ -2210,21 +2264,6 @@ with(tab6):
 					st.session_state["topices"] = topic_selected
 					st.write("This is Tab 3")
 
-				# if section_selected:
-				# 	topics_data = db.collection("lessons").document(lesson_id_mapping[lesson_brain]).collection(section_selected).get()
-				# 	topic_options = []
-				# 	topic_id_mapping = {}
-				# 	for item in topics_data:
-				# 		try:
-				# 			topic = item.to_dict()['topic_name']
-				# 		except:
-				# 			topic = item.to_dict()['activity_name']
-				# 		topic_id_mapping[topic] = item.id
-				# 		topic_options.append(topic)
-				# 	# lesson_options
-				# 	# lesson_options = [doc.id for doc in db.collection("lessons").where("subject", "==", st.session_state["subject_brain"]).stream()]
-				# 	# lesson_options = ["LESSON1", "LESSON2"]
-				# 	topic_selected = st.selectbox("Select Topic", topic_options)
 					paragraph_brain = st.text_area("Enter a paragraph:",key="bain_para", height=200)
 					prompt_brain = st.text_area("Enter the prompt:",key="brain_prompt", height=200)
 					if(paragraph_brain or prompt_brain):
@@ -2272,10 +2311,7 @@ with(tab6):
 with(tab7):
 	# Upload image
 	final_data=[]
-	#option = st.selectbox(
-		#'Choose Number of Questions:',
-		#('5', '10', '15', '20'))
-	# If an image is uploaded, display and process it
+ 
 
 	syllabus  = st.selectbox(
 				"Select Syllabus",
@@ -2361,7 +2397,7 @@ with(tab7):
 
 
 with(tab8):
-	st.write(" Coming Soon...")
+	# st.write(" Coming Soon...")
 	final_data = []
 	syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab8')
 	class_name = st.selectbox(
@@ -2423,11 +2459,11 @@ with(tab8):
 					final_data.append(json_struct)
 					#st.write(final_data)
 			save_json_to_text(final_data, 'output.txt')
-			# collection = db.collection("question-library")
-			# for item in final_data:
-			# 	doc = collection.document()
-			# 	item['question_id'] = doc.id
-			# 	doc.set(item)
+			collection = db.collection("question-library")
+			for item in final_data:
+				doc = collection.document()
+				item['question_id'] = doc.id
+				doc.set(item)
 			download_button_id = str(uuid.uuid4())
 			# Provide a download link for the text file
 			st.download_button(
@@ -2608,7 +2644,7 @@ with(tab11):
 				"Select lesson",
 		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab11")
 	
-	textbook_text = st.text_area("Enter the textbook questions here:", height=200,key='Assertion and Reason')
+	textbook_text = st.text_area("Enter the content here:", height=200,key='Assertion and Reason')
 	prompt_assertion_and_reason_questions = st.text_area("Enter the prompt:",key="Assertion_and_Reason", height=200,value="workout answers for asseration and reason questions")
 	json_struct={}
 
@@ -2661,6 +2697,238 @@ with(tab11):
 			# Provide a download link for the text file
 			st.download_button(
 						label="Download Textbook Questions",
+						data=open('output.txt', 'rb').read(),
+						file_name='output.txt',
+						mime='text/plain',
+					key=download_button_id
+			)
+			
+		else:
+			st.write("Please enter the text to generate Summary.")
+
+
+def claude_generate_case_based_questions(paragraph,url,headers,prompt):
+	 
+	messeage_list = [
+		{
+			"role": "user",
+			"content": [
+				{"type": "text", "text": f"prompt: {prompt} and the topic :'''{paragraph}'''"}
+			]
+		}
+	]
+
+	response = client_anthropic.messages.create(
+		model="claude-3-5-sonnet-20240620",
+            max_tokens=4096,
+            temperature=0,
+            system= system_case_based_questions,
+            messages=messeage_list,
+            tool_choice={"type":"tool","name":"generate_case_based_questions"},
+            tools = tools_case_based_questions,
+	)
+
+	response_json = response.content[0].input
+	function_response = json.dumps(response_json)
+
+	return function_response
+
+with(tab12):
+	#st.write("Coming Soon...")
+	final_data = []
+	syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab12')
+	class_name = st.selectbox(
+				"Select class",
+		('VI', 'VII', 'VIII', 'IX','X'),key="class_tab12")
+	subject_name  = st.selectbox(
+				"Select Subject",
+		("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab12")
+	lesson_name	 = st.selectbox(
+				"Select lesson",
+		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab12")
+	
+	textbook_text = st.text_area("Copy & Paste the topic here:", height=200,key='Case based questions')
+	prompt_case_based_questions = st.text_area("Enter the prompt:",key="case-based-questions", height=200,value="workout case-based questions and answers")
+	json_struct={}
+
+	if st.button("Get Case-Based Questions"):
+		if textbook_text:
+			if syllabus == "CBSE":
+				subject_collection = db.collection('cbse_subjects')
+			elif syllabus == "SSC":
+				subject_collection = db.collection('ssc_subjects')
+			else:
+				raise Exception("Wrong Syllabus")
+			 
+			subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
+			subject_id = subject_data['subject_id']
+			 
+			lesson_collection = db.collection('lessons')
+			lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
+			lesson_id = lesson_document.get()[0].id
+			lp = claude_generate_case_based_questions(textbook_text,chatgpt_url,chatgpt_headers,prompt_case_based_questions)
+			print("lp----->",lp)
+			lp_json=json.loads(lp)
+		
+			for j in lp_json['questions']:
+					json_struct={}
+					json_struct['class']=class_name
+					json_struct['subject']=subject_name
+					json_struct['lesson']=lesson_name
+					json_struct['case_study']=j['case_study']
+					json_struct['question']=j['question']
+					json_struct['options']=j['options']
+					json_struct['answer']=j['answer']
+					json_struct['topic']=lp_json['topic']
+					json_struct['level']=j['question_level']
+					json_struct['question_type']=j['question_type']
+					json_struct['type']='single-line'
+					json_struct['marks']='1'
+					json_struct['syllabus']=syllabus
+					json_struct['subject_id']=subject_id
+					json_struct['lesson_id']=lesson_id
+					json_struct['access']="public"
+					json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type'],"case-based-question"]}
+					#st.write(json_struct)
+					final_data.append(json_struct)
+					#st.write(final_data)
+			save_json_to_text(final_data, 'output.txt')
+			collection = db.collection("question-library")
+			for item in final_data:
+				doc = collection.document()
+				item['question_id'] = doc.id
+				doc.set(item)
+			download_button_id = str(uuid.uuid4())
+			# Provide a download link for the text file
+			st.download_button(
+						label="Download Case-Based Questions",
+						data=open('output.txt', 'rb').read(),
+						file_name='output.txt',
+						mime='text/plain',
+					key=download_button_id
+			)
+			
+		else:
+			st.write("Please enter the text to generate Summary.")
+
+def encode_base64(image_path):
+	with open(image_path,'rb') as image_file:
+		return base64.b64encode(image_file.read()).decode()
+	
+def claude_generate_diagram_based_questions(temp_image_path,url,headers,prompt):
+	 
+	base64_string = encode_base64(temp_image_path)
+	messages_list = [
+		{
+			"role": "user",
+			"content": [
+				{"type": "text", "text": f"{prompt}"},
+				{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_string } }
+			]
+		}
+	]
+
+	response = client_anthropic.messages.create(
+		model="claude-3-5-sonnet-20240620",
+            max_tokens=4096,
+            temperature=0,
+            system= system_diagram_based_questions,
+            messages=messages_list,
+            tool_choice={"type":"tool","name":"generate_diagram_based_questions"},
+            tools = tools_diagram_based_questions,
+	)
+
+	response_json = response.content[0].input
+	function_response = json.dumps(response_json)
+
+	return function_response
+
+
+with(tab13):
+	#st.write("Coming Soon...")
+	final_data = []
+	syallabus = st.selectbox(label="Select Syllabus",options=('CBSE','SSC'), key='syllabus_tab13')
+	class_name = st.selectbox(
+				"Select class",
+		('VI', 'VII', 'VIII', 'IX','X'),key="class_tab13")
+	subject_name  = st.selectbox(
+				"Select Subject",
+		("PHYSICS","SCIENCE","BIOLOGY","CHEMISTRY", "SOCIAL", "HISTORY", "GEOGRAPHY", "CIVICS", "ECONOMICS", "MATHEMATICS", "TELUGU", "HINDI", "ENGLISH"),key="subject_tab13")
+	lesson_name	 = st.selectbox(
+				"Select lesson",
+		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab13")
+	
+	image = st.file_uploader("Upload Image", type=['.png','.jpg'])
+	 
+
+	if image is not None:
+		read_image = image.read()
+		image = Image.open(io.BytesIO(read_image))
+		st.image(image,caption="Uploaded Image.", use_column_width=True)
+	
+		with tempfile.NamedTemporaryFile(delete=False,suffix='.jpg') as temp_file:
+			temp_file.write(read_image)
+			temp_img_path = temp_file.name
+	else:
+		st.write("please upload image...")
+		
+	prompt_case_based_questions = st.text_area("Enter the prompt:",key="Diagram-based-questions", height=200,value="workout diagram-based questions and answers")
+	json_struct={}
+
+	if st.button("Get Diagram Based Questions"):
+		if image:
+			if syllabus == "CBSE":
+				subject_collection = db.collection('cbse_subjects')
+			elif syllabus == "SSC":
+				subject_collection = db.collection('ssc_subjects')
+			else:
+				raise Exception("Wrong Syllabus")
+			 
+			subject_data = subject_collection.where("subject_name", "==", subject_name).limit(1).get()[0].to_dict()
+			subject_id = subject_data['subject_id']
+			 
+			lesson_collection = db.collection('lessons')
+			lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
+			lesson_id = lesson_document.get()[0].id
+			lp = claude_generate_diagram_based_questions(temp_img_path,chatgpt_url,chatgpt_headers,prompt_case_based_questions)
+			print("lp----->",lp)
+			lp_json=json.loads(lp)
+		
+			for j in lp_json['questions']:
+					json_struct={}
+					json_struct['class']=class_name
+					json_struct['subject']=subject_name
+					json_struct['lesson']=lesson_name
+					 
+					json_struct['question']=j['question']
+					if j['question_type_short_or_long']=='Short Question':
+						json_struct['marks']=2
+					else:
+						json_struct['marks']=5
+					json_struct['answer']=j['answer']
+					json_struct['topic']=lp_json['topic']
+					json_struct['level']=j['question_level']
+					json_struct['question_type']=j['question_type']
+					json_struct['type']='single-line'
+					json_struct['marks']='1'
+					json_struct['syllabus']=syllabus
+					json_struct['subject_id']=subject_id
+					json_struct['lesson_id']=lesson_id
+					json_struct['access']="public"
+					json_struct['metadata']={"tags":[class_name,lesson_name,subject_name,j['question_type'],"diagram-based-question"]}
+					#st.write(json_struct)
+					final_data.append(json_struct)
+					#st.write(final_data)
+			save_json_to_text(final_data, 'output.txt')
+			collection = db.collection("question-library")
+			for item in final_data:
+				doc = collection.document()
+				item['question_id'] = doc.id
+				doc.set(item)
+			download_button_id = str(uuid.uuid4())
+			# Provide a download link for the text file
+			st.download_button(
+						label="Download Diagram-Based Questions",
 						data=open('output.txt', 'rb').read(),
 						file_name='output.txt',
 						mime='text/plain',
