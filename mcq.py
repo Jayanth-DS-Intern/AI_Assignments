@@ -16,7 +16,7 @@ import uuid
 import PyPDF2
 import firebase_admin
 from firebase_admin import credentials
-from firebase_admin import firestore
+from firebase_admin import firestore, storage
 import anthropic
 from anthropic import Client
 from PIL import Image
@@ -2823,7 +2823,7 @@ def claude_generate_diagram_based_questions(temp_image_path,url,headers,prompt):
 			"role": "user",
 			"content": [
 				{"type": "text", "text": f"{prompt}"},
-				{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_string } }
+				{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64_string } }
 			]
 		}
 	]
@@ -2858,11 +2858,30 @@ with(tab13):
 				"Select lesson",
 		("LESSON1", "LESSON2","LESSON3","LESSON4","LESSON5","LESSON6","LESSON7","LESSON8","LESSON9","LESSON10","LESSON11","LESSON12","LESSON13"),key="lesson_name_tab13")
 	
-	image = st.file_uploader("Upload Image", type=['.png','.jpg'])
+	image = st.file_uploader("Upload Image", type=['.png',])
 	 
 
 	if image is not None:
 		read_image = image.read()
+		 
+		bucket = storage.bucket("learninpad.appspot.com")
+		# Create a reference to the image in Firebase Storage
+		image_path = f"questions_library/{image.name}"
+		blob = bucket.blob(image_path)
+		
+		# Upload the image to Firebase Storage
+		blob.upload_from_string(read_image, content_type='image/png')
+		
+		# Get the public URL of the uploaded image
+		image_url = blob.public_url
+		
+		# Store the image URL in Firestore
+		# doc_ref = db.collection('questions').document()
+		# doc_ref.set({
+		# 	'image': image_url
+		# })
+		
+		#st.image(read_image, caption='Uploaded Image')
 		image = Image.open(io.BytesIO(read_image))
 		st.image(image,caption="Uploaded Image.", use_column_width=True)
 	
@@ -2899,7 +2918,7 @@ with(tab13):
 					json_struct['class']=class_name
 					json_struct['subject']=subject_name
 					json_struct['lesson']=lesson_name
-					 
+					json_struct['image_url']=image_url
 					json_struct['question']=j['question']
 					if j['question_type_short_or_long']=='Short Question':
 						json_struct['marks']=2
@@ -2924,9 +2943,10 @@ with(tab13):
 			for item in final_data:
 				doc = collection.document()
 				item['question_id'] = doc.id
+				print("document id-------->",doc.id)
 				doc.set(item)
 			download_button_id = str(uuid.uuid4())
-			# Provide a download link for the text file
+			#Provide a download link for the text file
 			st.download_button(
 						label="Download Diagram-Based Questions",
 						data=open('output.txt', 'rb').read(),
