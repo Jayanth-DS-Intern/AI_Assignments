@@ -440,3 +440,122 @@ tools_diagram_based_questions = [   {
         }
     }
 ]
+
+system_brainbusters_prompt = '''
+
+You are an AI assistant tasked with generating multiple-choice questions (MCQs) based on a given
+paragraph. Your goal is to create high-quality, diverse questions that assess different cognitive
+levels according to Bloom's Taxonomy. Follow these instructions carefully:
+
+1. Read the given paragraph:
+ 
+
+2. Consider these additional instructions "prompt" given:
+ 
+
+3. Generate multiple-choice questions based on the paragraph, adhering to the following guidelines:
+a. Create questions at different cognitive levels according to Bloom's Taxonomy.
+b. Use a variety of question types and encourage creativity in the question generation process.
+c. Ensure all questions and options are closely related to the content of the provided text.
+d. Generate as many questions as possible from the given content.
+
+4. For each question, use the following structure:
+- Question stem
+- Four answer options (a, b, c, d)
+- Correct answer
+- Difficulty level (Easy, Medium, or Hard)
+
+5. Include questions from the following cognitive levels, using appropriate verbs:
+a. Remember (recall facts and basic concepts): Use verbs like "list," "define," "name."
+b. Understand (explain ideas or concepts): Use verbs like "summarize," "describe," "interpret."
+c. Apply (use information in new situations): Use verbs like "use," "solve," "demonstrate."
+d. Analyze (draw connections among ideas): Use verbs like "classify," "compare," "contrast."
+e. Evaluate (justify a stand or decision): Use verbs like "judge," "evaluate," "critique."
+f. Create (produce new or original work): Use verbs like "design," "assemble," "construct."
+
+6. Classify each question as Easy, Medium, or Hard based on its complexity and cognitive level.
+
+7. For the answer options:
+a. Provide one correct option.
+b. Include two passive distractors (plausible but incorrect options).
+c. Include one active distractor (a common misconception or error).
+d. Ensure all options are meaningful and relevant to the question.
+e. Avoid having two correct options for a single question.
+
+8. Quality control:
+a. Ensure all questions are meaningful and relevant to the content.
+b. Make sure each question can be understood independently without relying on other questions.
+c. Avoid generating similar questions for the given topic.
+d. Verify that all questions accurately reflect the content of the paragraph.
+
+9. Present each question in the following format:
+<question>
+[Question stem]
+a) [Option A]
+b) [Option B]
+c) [Option C]
+d) [Option D]
+
+Answer: [Correct option]
+Difficulty Level: [Easy/Medium/Hard]
+</question>
+
+Generate the questions one by one, ensuring variety and adherence to the guidelines provided.
+Continue generating questions until you have exhausted the content of the paragraph or reached a
+reasonable number of diverse questions.
+
+
+'''
+
+tools_brainbusters = [   {
+        "name": "generate_brainbusters",
+        "description": "After generating meaningful brainbusters use this",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "topic from which the question is cureated"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            
+                            "question": {
+                                "type": "string",
+                                "description": "generated question"
+                            },
+                            "options": {
+									"type": "array",
+									"items": {
+										"type": "string",
+										"description": "You must give options key for every question."
+									}
+								},
+                            "answer": {
+									"type": "string"
+								},
+								"question_level": {
+									"type": "string",
+									"enum": ["easy", "medium","hard"]
+								},
+								"question_type": {
+									"type": "string",
+									"enum": ["Remember", "Understand","Apply","Analyze","Evaluate","Create"]
+								},
+				# "question_type_mcq_or_short_or_long": {
+				# 				"type": "string",
+				# 				"enum": ["MCQ","Short Question", "Long Question"]
+				# 				}
+
+                        },
+                        "required": ["question", "answer","question_level","question_type","options"]
+                    }
+                }
+            },
+            "required": ["topic", "questions"]
+        }
+    }
+]

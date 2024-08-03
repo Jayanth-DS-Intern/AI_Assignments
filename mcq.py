@@ -25,7 +25,7 @@ import base64
 import io
 # from dotenv import load_dotenv
 # load_dotenv()
-from system_tools import system_activity_questions,tools_activity_questions,system_case_based_questions,tools_case_based_questions,system_diagram_based_questions,tools_diagram_based_questions
+from system_tools import system_activity_questions,tools_activity_questions,system_case_based_questions,tools_case_based_questions,system_diagram_based_questions,tools_diagram_based_questions,tools_brainbusters,system_brainbusters_prompt
 
 data_cred={"type": "service_account",
 		"project_id": os.getenv("project_id"),
@@ -1575,7 +1575,7 @@ def run_conversation(paragraph,prompt):
 	 c) Option C 
 	 d) Option D
 
-	 Answer: C
+	 Answer: Option A
 	 
 	 Level:Easy
 
@@ -1587,7 +1587,7 @@ def run_conversation(paragraph,prompt):
 	 d) Option D
 
 	 
-	 Answer: A
+	 Answer: Option A
 	 
 	 Difficulty Level:Easy
 
@@ -1599,7 +1599,7 @@ def run_conversation(paragraph,prompt):
 	 c) Option C 
 	 d) Option D
 
-	 Answer: D
+	 Answer: Option D
 	 
 	 Difficulty Level:Medium
 
@@ -1611,7 +1611,7 @@ def run_conversation(paragraph,prompt):
 	 c) Option C
 	 d) Option D
 
-	 Answer: B
+	 Answer: b) Option B
 	 
 	Difficulty	Level:Hard
 
@@ -1633,7 +1633,8 @@ def run_conversation(paragraph,prompt):
 
 
    
-Ensure the questions and options are closely related to the content of the provided text and reflect the cognitive level specified for every question. Generate as many questions as possible from the given content, incorporating diverse question types and encouraging creativity in the process."""},{"role": "user", "content": paragraph}]
+Ensure the questions and options are closely related to the content of the provided text and reflect the cognitive level specified for every question. Generate as many questions as possible from the given content, incorporating diverse question types and encouraging creativity in the process."""},
+{"role": "user", "content": paragraph}]
 	tools = [
 		{
 			"type": "function",
@@ -1709,6 +1710,7 @@ Ensure the questions and options are closely related to the content of the provi
 			)
 			return function_response
 			
+
 
 
 			
@@ -2161,6 +2163,31 @@ with(tab5):
 		else:
 			st.write("Please enter the text to generate Summary.")
 
+def claude_brainbusters_generation(paragraph,prompt):
+	messeage_list = [
+		{
+			"role": "user",
+			"content": [
+				{"type": "text", "text": f"<prompt> {prompt} /<prompt> and the <paragraph>'''{paragraph} <paragraph>'''"}
+			]
+		}
+	]
+
+	response = client_anthropic.messages.create(
+		model="claude-3-5-sonnet-20240620",
+            max_tokens=4096,
+            temperature=0,
+            system= system_brainbusters_prompt,
+            messages=messeage_list,
+            tool_choice={"type":"tool","name":"generate_brainbusters"},
+            tools = tools_brainbusters,
+	)
+
+	response_json = response.content[0].input
+	function_response = json.dumps(response_json)
+
+	return function_response
+
 with(tab6):
 
 	
@@ -2266,46 +2293,48 @@ with(tab6):
 
 					paragraph_brain = st.text_area("Enter a paragraph:",key="bain_para", height=200)
 					prompt_brain = st.text_area("Enter the prompt:",key="brain_prompt", height=200)
-					if(paragraph_brain or prompt_brain):
-						mcqs_brain = run_conversation(paragraph_brain,prompt_brain)
-						mcq_json=json.loads(mcqs_brain)
-						cards=[]
-						json_struct={}
+					if st.button("Generate Brain Busters"):
 
-						for idx,j in enumerate(mcq_json['questions']):
-							json_struct_inter={}
-							options = j['options']  # Assuming j['options'] is a list of strings
+						if(paragraph_brain or prompt_brain):
+							mcqs_brain = claude_brainbusters_generation(paragraph_brain,prompt_brain)
+							mcq_json=json.loads(mcqs_brain)
+							cards=[]
+							json_struct={}
 
-							# Create a formatted string with a, b, c, ... in front of each option
-							result = '\n'.join(f"{chr(97 + i)}. {option}" for i, option in enumerate(options))
-							json_struct_inter['front_text']=str(idx+1)+")"+j['question']+'\n'+result
-					
-							json_struct_inter['back_text']=j['answer']
-							json_struct_inter['back_image']=None
-							json_struct_inter['front_image']=None
+							for idx,j in enumerate(mcq_json['questions']):
+								json_struct_inter={}
+								options = j['options']  # Assuming j['options'] is a list of strings
+
+								# Create a formatted string with a, b, c, ... in front of each option
+								result = '\n'.join(f"{chr(97 + i)}. {option}" for i, option in enumerate(options))
+								json_struct_inter['front_text']=str(idx+1)+")"+j['question']+'\n'+result
+						
+								json_struct_inter['back_text']=j['answer']
+								json_struct_inter['back_image']=None
+								json_struct_inter['front_image']=None
+								#st.write(json_struct)
+								cards.append(json_struct_inter)
+							json_struct['cards']=cards
+							json_struct['topic_id']=topic_id_mapping[topic_selected]
 							#st.write(json_struct)
-							cards.append(json_struct_inter)
-						json_struct['cards']=cards
-						json_struct['topic_id']=topic_id_mapping[topic_selected]
-						#st.write(json_struct)
-						brain_buster_query = db.collection('brain_busters').where('topic_id', '==', json_struct['topic_id']).stream()
-						bb_docs = list(brain_buster_query)
-						if bb_docs:
-							doc_ref = bb_docs[0].id
-							db.collection('brain_busters').document(doc_ref).set(json_struct)
-						else:
-							db.collection('brain_busters').document().set(json_struct)
-						save_json_to_text(json_struct, 'output.txt')
-						download_button_id = str(uuid.uuid4())
-						# Provide a download link for the text file
-						st.download_button(
-						label="Download Text File",
-						data=open('output.txt', 'rb').read(),
-						file_name='output.txt',
-						mime='text/plain',
-						key=download_button_id
-								)
-				
+							# brain_buster_query = db.collection('brain_busters').where('topic_id', '==', json_struct['topic_id']).stream()
+							# bb_docs = list(brain_buster_query)
+							# if bb_docs:
+							# 	doc_ref = bb_docs[0].id
+							# 	db.collection('brain_busters').document(doc_ref).set(json_struct)
+							# else:
+							# 	db.collection('brain_busters').document().set(json_struct)
+							save_json_to_text(json_struct, 'output.txt')
+							download_button_id = str(uuid.uuid4())
+							# Provide a download link for the text file
+							st.download_button(
+							label="Download Text File",
+							data=open('output.txt', 'rb').read(),
+							file_name='output.txt',
+							mime='text/plain',
+							key=download_button_id
+									)
+					
 		
 
 with(tab7):
