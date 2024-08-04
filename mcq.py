@@ -99,8 +99,8 @@ def chapter_topic_identification(questions,topic):
 		return json.dumps({"questions": questions, "topic":topic})
 
 def save_json_to_text(json_data, filename):
-	with open(filename, 'w') as f:
-		f.write(json.dumps(json_data, indent=4))
+	with open(filename, 'w',encoding='utf-8') as f:
+		f.write(json.dumps(json_data, indent=4,ensure_ascii=False))
 
 def extract_data(file):
 	reader = PyPDF2.PdfReader(file)
@@ -2324,12 +2324,13 @@ with(tab6):
 							# 	db.collection('brain_busters').document(doc_ref).set(json_struct)
 							# else:
 							# 	db.collection('brain_busters').document().set(json_struct)
+
 							save_json_to_text(json_struct, 'output.txt')
 							download_button_id = str(uuid.uuid4())
 							# Provide a download link for the text file
 							st.download_button(
 							label="Download Text File",
-							data=open('output.txt', 'rb').read(),
+							data=open('output.txt', 'r',encoding='utf-8').read(),
 							file_name='output.txt',
 							mime='text/plain',
 							key=download_button_id

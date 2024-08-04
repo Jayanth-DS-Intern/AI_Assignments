@@ -457,7 +457,16 @@ levels according to Bloom's Taxonomy. Follow these instructions carefully:
 a. Create questions at different cognitive levels according to Bloom's Taxonomy.
 b. Use a variety of question types and encourage creativity in the question generation process.
 c. Ensure all questions and options are closely related to the content of the provided text.
-d. Generate as many questions as possible from the given content.
+e. Do not include phrases like "observed in this experiment," "Based on the passage," "Not mentioned
+in the text," or "mentioned in the text" in the questions.
+f. Questions should be meaningful and understandable without relying on the original content.
+g. Avoid questions that ask about what is NOT mentioned or what is incorrect based on the given
+topic
+
+Dont ask questions like these:
+Which of the following is NOT mentioned as an irrational number in the text?
+Which of the folllowing is not correct statement based on the given topic?
+According to the given passage which is not correct?
 
 4. For each question, use the following structure:
 - Question stem

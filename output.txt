@@ -1,125 +1,125 @@
 {
     "cards": [
         {
-            "front_text": "1)What is the definition of rational numbers?\na. Numbers that can be expressed as a fraction of two integers p/q, where p and q are integers, and q \u2260 0\nb. All positive and negative whole numbers\nc. Numbers that cannot be expressed as fractions\nd. Only terminating decimal numbers",
-            "back_text": "Numbers that can be expressed as a fraction of two integers p/q, where p and q are integers, and q \u2260 0",
+            "front_text": "1)What is the definition of an irrational number?\na. A number that can be written as a fraction\nb. A number that cannot be written in the form p/q, where p and q are integers and q ≠ 0\nc. A number that can be represented as a terminating decimal\nd. A number that is always negative",
+            "back_text": "A number that cannot be written in the form p/q, where p and q are integers and q ≠ 0",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "2)Which of the following sets of numbers includes all the others?\na. Natural Numbers (N)\nb. Whole Numbers (W)\nc. Integers (Z)\nd. Rational Numbers (Q)",
-            "back_text": "Rational Numbers (Q)",
+            "front_text": "2)Which of the following is an example of an irrational number?\na. 0\nb. 3/4\nc. √2\nd. -5",
+            "back_text": "√2",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "3)What is the key difference between natural numbers and whole numbers?\na. Whole numbers include zero, while natural numbers start from 1\nb. Natural numbers include negative integers, while whole numbers don't\nc. Whole numbers can be fractions, while natural numbers can't\nd. There is no difference between natural numbers and whole numbers",
-            "back_text": "Whole numbers include zero, while natural numbers start from 1",
+            "front_text": "3)Who proved that √2 is irrational?\na. Pythagoras\nb. Theodorus of Cyrene\nc. Lambert\nd. Legendre",
+            "back_text": "Pythagoras",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "4)Which of the following is NOT a characteristic of rational numbers?\na. They can be represented as fractions\nb. They can be positive, negative, or zero\nc. They can be terminating or repeating decimals\nd. They can only be positive",
-            "back_text": "They can only be positive",
+            "front_text": "4)How many irrational numbers exist?\na. A finite number\nb. Infinitely many\nc. Only 17\nd. None",
+            "back_text": "Infinitely many",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "5)What is the correct representation of 4.25 as a fraction?\na. 4/1\nb. 17/4\nc. 425/100\nd. 85/20",
-            "back_text": "17/4",
+            "front_text": "5)What does the symbol R represent in mathematics?\na. Rational numbers\nb. Irrational numbers\nc. Real numbers\nd. Repeating decimals",
+            "back_text": "Real numbers",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "6)Which of the following numbers is NOT a rational number?\na. 0.333...\nb. -5\nc. 3/4\nd. \u03c0 (pi)",
-            "back_text": "\u03c0 (pi)",
+            "front_text": "6)Which statement best describes the relationship between rational and irrational numbers?\na. All numbers are either rational or irrational\nb. Some numbers are neither rational nor irrational\nc. Rational numbers are a subset of irrational numbers\nd. Irrational numbers can be expressed as fractions",
+            "back_text": "All numbers are either rational or irrational",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "7)What is the relationship between integers and rational numbers?\na. All integers are rational numbers, but not all rational numbers are integers\nb. All rational numbers are integers, but not all integers are rational numbers\nc. Integers and rational numbers are completely separate sets\nd. Integers and rational numbers are exactly the same set",
-            "back_text": "All integers are rational numbers, but not all rational numbers are integers",
+            "front_text": "7)When was π proven to be irrational?\na. In ancient Greece\nb. During the Renaissance\nc. In the late 1700s\nd. In the 20th century",
+            "back_text": "In the late 1700s",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "8)Which of the following best describes the set of whole numbers?\na. All positive integers\nb. All negative integers\nc. Natural numbers including zero\nd. All integers except zero",
-            "back_text": "Natural numbers including zero",
+            "front_text": "8)What is the significance of the real number line?\na. It represents only rational numbers\nb. It represents only irrational numbers\nc. Every point on it represents a unique real number\nd. It has gaps between numbers",
+            "back_text": "Every point on it represents a unique real number",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "9)If a number can be expressed as a terminating decimal, what can we conclude about it?\na. It is always an integer\nb. It is a rational number\nc. It cannot be expressed as a fraction\nd. It is always a natural number",
-            "back_text": "It is a rational number",
+            "front_text": "9)Which mathematician showed that √3, √5, √6, √7, and other square roots are irrational?\na. Pythagoras\nb. Theodorus of Cyrene\nc. Lambert\nd. Legendre",
+            "back_text": "Theodorus of Cyrene",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "10)Which of the following statements about rational numbers is FALSE?\na. Rational numbers can be represented as fractions\nb. Rational numbers include all integers\nc. Rational numbers can be positive or negative\nd. The denominator of a rational number can be zero",
-            "back_text": "The denominator of a rational number can be zero",
+            "front_text": "10)What is the relationship between real numbers and the number line?\na. Real numbers only occupy rational points on the line\nb. Real numbers leave gaps on the number line\nc. Every real number is represented by a unique point on the number line\nd. Irrational numbers cannot be placed on the number line",
+            "back_text": "Every real number is represented by a unique point on the number line",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "11)What is the smallest set of numbers that includes both -3 and 2/5?\na. Natural Numbers (N)\nb. Whole Numbers (W)\nc. Integers (Z)\nd. Rational Numbers (Q)",
-            "back_text": "Rational Numbers (Q)",
+            "front_text": "11)Which of the following is NOT mentioned as an irrational number in the text?\na. √2\nb. π\nc. e\nd. 0.10110111011110...",
+            "back_text": "e",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "12)Which of the following is true about the number 0?\na. It belongs only to natural numbers\nb. It belongs to whole numbers, integers, and rational numbers, but not to natural numbers\nc. It is not included in any of the number sets mentioned\nd. It belongs only to rational numbers",
-            "back_text": "It belongs to whole numbers, integers, and rational numbers, but not to natural numbers",
+            "front_text": "12)What is the significance of q ≠ 0 in the definition of irrational numbers?\na. It ensures the fraction is defined\nb. It makes the number positive\nc. It allows for complex numbers\nd. It has no significance",
+            "back_text": "It ensures the fraction is defined",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "13)What is the correct decimal representation of the fraction 2/3?\na. 0.6\nb. 0.66\nc. 0.666...\nd. 0.67",
-            "back_text": "0.666...",
+            "front_text": "13)How would you classify the number 0 based on the information given?\na. Irrational number\nb. Rational number\nc. Neither rational nor irrational\nd. Both rational and irrational",
+            "back_text": "Rational number",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "14)Which of the following best describes the relationship between natural numbers and integers?\na. Natural numbers and integers are the same set\nb. Integers are a subset of natural numbers\nc. Natural numbers are a subset of integers\nd. Natural numbers and integers have no elements in common",
-            "back_text": "Natural numbers are a subset of integers",
+            "front_text": "14)What can be inferred about the density of rational and irrational numbers on the number line?\na. Rational numbers are more dense\nb. Irrational numbers are more dense\nc. They are equally dense\nd. Their density cannot be compared",
+            "back_text": "Their density cannot be compared",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "15)If a number is represented as a repeating decimal, what can we conclude about it?\na. It is always an irrational number\nb. It is a rational number\nc. It cannot be expressed as a fraction\nd. It must be a whole number",
-            "back_text": "It is a rational number",
+            "front_text": "15)Why is √4 not listed as an irrational number?\na. It is actually irrational\nb. It equals 2, which is a rational number\nc. The text contains an error\nd. √4 is undefined",
+            "back_text": "It equals 2, which is a rational number",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "16)Which of the following is NOT a valid way to represent the rational number 3.75?\na. 15/4\nb. 3.750\nc. 3 + 3/4\nd. 7.5/2",
-            "back_text": "3 + 3/4",
+            "front_text": "16)What is the historical significance of the Pythagoreans' proof of √2 being irrational?\na. It was the first irrational number discovered\nb. It challenged the prevailing belief that all numbers were rational\nc. It led to the invention of complex numbers\nd. It proved the existence of imaginary numbers",
+            "back_text": "It challenged the prevailing belief that all numbers were rational",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "17)What is the key characteristic that distinguishes rational numbers from other number types?\na. They are always positive\nb. They can be expressed as a ratio of two integers\nc. They cannot be represented as decimals\nd. They are always whole numbers",
-            "back_text": "They can be expressed as a ratio of two integers",
+            "front_text": "17)How would you explain the concept of irrational numbers to someone who only knows about fractions?\na. They are numbers that can't be written as fractions\nb. They are very large numbers\nc. They are negative numbers\nd. They are numbers with many decimal places",
+            "back_text": "They are numbers that can't be written as fractions",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "18)Which of the following sets is infinite but countable?\na. Natural Numbers (N)\nb. Whole Numbers (W)\nc. Integers (Z)\nd. Rational Numbers (Q)",
-            "back_text": "Rational Numbers (Q)",
+            "front_text": "18)What is the relationship between √4 and 2 according to the text?\na. They are different numbers\nb. √4 is assumed to be the positive square root, which is 2\nc. √4 can be either 2 or -2\nd. √4 is irrational while 2 is rational",
+            "back_text": "√4 is assumed to be the positive square root, which is 2",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "19)If you were to create a new number system that includes all the numbers mentioned in the given content, what would you call it?\na. Natural Number System\nb. Whole Number System\nc. Integer System\nd. Rational Number System",
-            "back_text": "Rational Number System",
+            "front_text": "19)Based on the information provided, which of the following statements about real numbers is true?\na. All real numbers are rational\nb. All real numbers are irrational\nc. Real numbers include both rational and irrational numbers\nd. Real numbers exclude both rational and irrational numbers",
+            "back_text": "Real numbers include both rational and irrational numbers",
             "back_image": null,
             "front_image": null
         },
         {
-            "front_text": "20)Which of the following statements about the denominator of a rational number is true?\na. It can be any real number\nb. It must be a positive integer\nc. It must be a non-zero integer\nd. It can be zero if the numerator is also zero",
-            "back_text": "It must be a non-zero integer",
+            "front_text": "20)What would be the best way to visually represent the relationship between rational, irrational, and real numbers?\na. A number line with gaps\nb. A Venn diagram with overlapping circles\nc. A Venn diagram with rational and irrational as subsets of real numbers\nd. A bar graph showing the quantity of each type of number",
+            "back_text": "A Venn diagram with rational and irrational as subsets of real numbers",
             "back_image": null,
             "front_image": null
         }
     ],
-    "topic_id": "8M75VLhhblM4S77JkeDa"
+    "topic_id": "t7MBydAVVRVpkusjCquH"
 }
