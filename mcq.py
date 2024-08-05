@@ -2476,7 +2476,11 @@ with(tab8):
 					json_struct['answer']=j['answer']
 					json_struct['level']=j['question_level']
 					json_struct['question_type']=j['question_type']
-					json_struct['type']='single-line'
+					if(j['question_type_mcq_or_short_or_long']=='MCQ'):
+						json_struct['type']='multi-choice'
+					else:
+						json_struct['type']='single-line'
+
 					if(j['question_type_mcq_or_short_or_long']=='MCQ'):
 						json_struct['marks']='1'
 					elif(j['question_type_mcq_or_short_or_long']=='Short Question'):
