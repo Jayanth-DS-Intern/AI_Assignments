@@ -2391,7 +2391,10 @@ with(tab7):
 					json_struct['answer']=j['answer']
 					json_struct['level']=j['question_level']
 					json_struct['question_type']=j['question_type']
-					json_struct['type']='single-line'
+					if(j['question_type_mcq_or_short_or_long']=='MCQ'):
+						json_struct['type']='multi-choice'
+					else:
+						json_struct['type']='single-line'
 					if(j['question_type_mcq_or_short_or_long']=='MCQ'):
 						json_struct['marks']='1'
 					elif(j['question_type_mcq_or_short_or_long']=='Short Question'):
@@ -2554,7 +2557,7 @@ with(tab9):
 					json_struct['answer']=j['answer']
 					json_struct['level']=j['question_level']
 					json_struct['question_type']=j['question_type']
-					json_struct['type']='single-line'
+					json_struct['type']='blank'
 					json_struct['marks']='1'
 					json_struct['syllabus']=syllabus
 					json_struct['subject_id']=subject_id
@@ -2631,7 +2634,7 @@ with(tab10):
 					json_struct['answer']=j['answer']
 					json_struct['level']=j['question_level']
 					json_struct['question_type']=j['question_type']
-					json_struct['type']='single-line'
+					json_struct['type']='match'
 					json_struct['marks']='1'
 					json_struct['syllabus']=syllabus
 					json_struct['subject_id']=subject_id
@@ -2707,7 +2710,7 @@ with(tab11):
 					json_struct['answer']=j['answer']
 					json_struct['level']=j['question_level']
 					json_struct['question_type']=j['question_type']
-					json_struct['type']='single-line'
+					json_struct['type']='assertion-reason'
 					json_struct['marks']='1'
 					json_struct['syllabus']=syllabus
 					json_struct['subject_id']=subject_id
@@ -2812,7 +2815,7 @@ with(tab12):
 					json_struct['topic']=lp_json['topic']
 					json_struct['level']=j['question_level']
 					json_struct['question_type']=j['question_type']
-					json_struct['type']='single-line'
+					json_struct['type']='case'
 					json_struct['marks']='1'
 					json_struct['syllabus']=syllabus
 					json_struct['subject_id']=subject_id
@@ -2958,7 +2961,7 @@ with(tab13):
 					json_struct['topic']=lp_json['topic']
 					json_struct['level']=j['question_level']
 					json_struct['question_type']=j['question_type']
-					json_struct['type']='single-line'
+					json_struct['type']='diagram'
 					json_struct['marks']='1'
 					json_struct['syllabus']=syllabus
 					json_struct['subject_id']=subject_id
