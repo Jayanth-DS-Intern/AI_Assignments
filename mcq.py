@@ -2319,7 +2319,7 @@ with(tab6):
 							#st.write(json_struct)
 							brain_buster_query = db.collection('brain_busters').where('topic_id', '==', json_struct['topic_id']).stream()
 							bb_docs = list(brain_buster_query)
-							if bb_docs:
+							if bb_docs:  
 								doc_ref = bb_docs[0].id
 								db.collection('brain_busters').document(doc_ref).set(json_struct)
 							else:
