@@ -3,3 +3,4 @@
 venv
 .txt
 .zip
+__pycache__

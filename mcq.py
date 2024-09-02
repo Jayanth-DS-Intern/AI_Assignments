@@ -2744,7 +2744,7 @@ with(tab11):
 			st.write("Please enter the text to generate Summary.")
 
 
-def claude_generate_case_based_questions(paragraph,url,headers,prompt):
+def claude_generate_case_based_questions(paragraph,prompt):
 	 
 	messeage_list = [
 		{
@@ -2852,7 +2852,7 @@ def encode_base64(image_path):
 	with open(image_path,'rb') as image_file:
 		return base64.b64encode(image_file.read()).decode()
 	
-def claude_generate_diagram_based_questions(temp_image_path,url,headers,prompt):
+def claude_generate_diagram_based_questions(temp_image_path,prompt):
 	 
 	base64_string = encode_base64(temp_image_path)
 	messages_list = [
@@ -2946,7 +2946,7 @@ with(tab13):
 			lesson_collection = db.collection('lessons')
 			lesson_document = lesson_collection.where("lesson_name", "==", lesson_name).where("subject_id", "==", subject_id).where("class", "==", class_name).limit(1)
 			lesson_id = lesson_document.get()[0].id
-			lp = claude_generate_diagram_based_questions(temp_img_path,chatgpt_url,chatgpt_headers,prompt_case_based_questions)
+			lp = claude_generate_diagram_based_questions(temp_img_path,prompt_case_based_questions)
 			print("lp----->",lp)
 			lp_json=json.loads(lp)
 		
